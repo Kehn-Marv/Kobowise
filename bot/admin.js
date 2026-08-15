@@ -96,7 +96,7 @@ _Tip: Unauthorized users will not see any replies from this bot (Silent Security
                 const type = u.business_type || 'Unknown';
                 const loc = u.location || 'Unknown';
                 // Avoid Markdown breaking on usernames with underscores by using code blocks
-                text += `${i+1}. ${u.business_name} (${type})\n   📍 ${loc} | \`${u.username ? '@'+u.username : 'No username'}\`\n`;
+                text += `${i+1}. ${u.business_name} (${type})\n   📍 ${loc} | \`${u.telegram_username ? '@'+u.telegram_username : 'No username'}\`\n`;
             });
             await adminBot.sendMessage(chatId, text, { parse_mode: 'Markdown' });
         } catch (e) {

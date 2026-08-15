@@ -664,7 +664,7 @@ async function handleOnboarding(chatId, telegramId, text, user) {
         // Notify Admins
         try {
             const { sendAdminAlert } = require('./admin');
-            const username = user.username ? '@' + user.username : 'No username';
+            const username = user.telegram_username ? '@' + user.telegram_username : 'No username';
             await sendAdminAlert(`🎉 *New User Registered!*\n\n• Business: ${user.business_name}\n• Type: ${user.business_type}\n• Location: ${text}\n• Username: ${username}`);
         } catch(e) {
             console.error('Failed to notify admins:', e);
