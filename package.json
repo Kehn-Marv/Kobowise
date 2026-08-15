@@ -1,0 +1,19 @@
+{
+  "name": "kobowise",
+  "version": "1.0.0",
+  "description": "Kobowise — AI Business Doctor for Nigerian SMEs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "@libsql/client": "^0.14.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "node-telegram-bot-api": "^0.66.0"
+  },
+  "keywords": ["kobowise", "ai", "fintech", "nigeria", "sme", "telegram-bot"],
+  "license": "MIT"
+}

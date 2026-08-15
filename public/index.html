@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kobowise — Know your profit without opening Excel</title>
+    <meta name="description" content="Kobowise helps Nigerian small business owners understand their finances through Telegram. Send voice notes, snap receipts, get a weekly health report. No spreadsheets. No jargon.">
+    <meta name="keywords" content="kobowise, ai, business assistant, nigerian sme, telegram bot, financial tracking, small business nigeria">
+    <meta name="theme-color" content="#0a0a0a">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/reicon@latest/cdn/reicon.js"></script>
+</head>
+<body>
+    <!-- ============ NAVBAR ============ -->
+    <nav class="navbar" id="navbar">
+        <div class="container nav-container">
+            <a href="#" class="nav-logo">
+                <span class="logo-text">Kobo<span class="logo-accent">wise</span></span>
+            </a>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#how-it-works">How it works</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#faq">FAQ</a></li>
+            </ul>
+            <div class="nav-auth">
+                <a href="https://t.me/KobowiseBot" target="_blank" class="btn btn-primary nav-cta">
+                    Start free
+                </a>
+            </div>
+            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ============ HERO ============ -->
+    <section class="hero" id="hero">
+        <div class="hero-bg">
+            <div class="hero-glow hero-glow-1"></div>
+            <div class="hero-glow hero-glow-2"></div>
+            <div class="hero-grid"></div>
+        </div>
+        <div class="container hero-container">
+            <div class="hero-content">
+
+                <h1 class="hero-title">
+                    Run your business,<br>
+                    <span class="gradient-text">not your spreadsheets.</span>
+                </h1>
+                <p class="hero-subtitle">
+                    Send a voice note or snap a receipt on Telegram. Kobowise automatically tracks your sales, categorizes expenses, and calculates your exact profit in real-time.
+                </p>
+                <div class="hero-ctas">
+                    <a href="https://t.me/KobowiseBot" target="_blank" class="btn btn-primary btn-lg">
+                        Get started for free
+                    </a>
+                    <a href="#how-it-works" class="btn btn-ghost btn-lg">
+                        Explore features
+                    </a>
+                </div>
+
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ============ STATS BAR ============ -->
+    <section class="stats-bar">
+        <div class="container stats-container">
+            <div class="stat-item reveal">
+                <div class="stat-number" data-count="41">0</div>
+                <div class="stat-suffix">M+</div>
+                <div class="stat-label">SMEs in Nigeria</div>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item reveal">
+                <div class="stat-number" data-count="80">0</div>
+                <div class="stat-suffix">%</div>
+                <div class="stat-label">Don't track finances</div>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item reveal">
+                <div class="stat-number" data-count="73">0</div>
+                <div class="stat-suffix">%</div>
+                <div class="stat-label">Fail within 5 years</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ HOW IT WORKS — Z-Shape ============ -->
+    <section class="section how-it-works" id="how-it-works">
+        <div class="container">
+            <div class="section-header reveal">
+                <span class="section-badge">How it works</span>
+                <h2 class="section-title">Three steps. That's it.</h2>
+                <p class="section-subtitle">No downloads. No sign-up forms. Just message our Telegram bot.</p>
+            </div>
+            <div class="steps-grid">
+                <!-- Step 1: visual left, text right -->
+                <div class="step-row reveal" style="--reveal-delay: 0.1s">
+                    <div class="step-visual">
+                        <div class="step-visual-icon"><re-icon icon="message-circle"></re-icon></div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-number">01</div>
+                        <h3 class="step-title">Send your data</h3>
+                        <p class="step-desc">Voice note in English or Pidgin, photo of your sales book, or just type it out. Whatever is easiest.</p>
+                        <div class="step-tags">
+                            <span class="step-tag"><re-icon icon="mic"></re-icon> Voice</span>
+                            <span class="step-tag"><re-icon icon="camera"></re-icon> Photo</span>
+                            <span class="step-tag"><re-icon icon="edit"></re-icon> Text</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Step 2: text left, visual right (reversed by CSS) -->
+                <div class="step-row reveal" style="--reveal-delay: 0.2s">
+                    <div class="step-visual">
+                        <div class="step-visual-icon"><re-icon icon="cpu"></re-icon></div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-number">02</div>
+                        <h3 class="step-title">AI processes</h3>
+                        <p class="step-desc">Our AI extracts numbers, categorizes income and expenses, and learns your business patterns over time.</p>
+                        <div class="step-tags">
+                            <span class="step-tag"><re-icon icon="zap"></re-icon> Instant</span>
+                            <span class="step-tag"><re-icon icon="target"></re-icon> Accurate</span>
+                            <span class="step-tag"><re-icon icon="cpu"></re-icon> Smart</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Step 3: visual left, text right -->
+                <div class="step-row reveal" style="--reveal-delay: 0.3s">
+                    <div class="step-visual">
+                        <div class="step-visual-icon"><re-icon icon="compass"></re-icon></div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-number">03</div>
+                        <h3 class="step-title">Get actionable insights</h3>
+                        <p class="step-desc">Every Sunday, receive a weekly summary with specific advice on how to save money and grow.</p>
+                        <div class="step-tags">
+                            <span class="step-tag"><re-icon icon="activity"></re-icon> Insights</span>
+                            <span class="step-tag"><re-icon icon="shield"></re-icon> Action items</span>
+                            <span class="step-tag"><re-icon icon="trending-up"></re-icon> Trends</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ FEATURES — Bento Grid ============ -->
+    <section class="section features" id="features">
+        <div class="container">
+            <div class="section-header reveal">
+                <span class="section-badge">Features</span>
+                <h2 class="section-title">Built for how you <span class="gradient-text">actually</span> work</h2>
+                <p class="section-subtitle">No accounting degree needed. Kobowise speaks your language.</p>
+            </div>
+            <div class="features-grid">
+                <!-- Featured card: spans full width -->
+                <div class="feature-card reveal" style="--reveal-delay: 0.05s">
+                    <div class="feature-icon"><re-icon icon="mic"></re-icon></div>
+                    <div>
+                        <h3 class="feature-title">Voice notes in English or Pidgin</h3>
+                        <p class="feature-desc">Speak naturally. Our AI understands Nigerian accents and slang. Just talk the way you'd talk to a friend.</p>
+                    </div>
+                </div>
+                <div class="feature-card reveal" style="--reveal-delay: 0.1s">
+                    <div class="feature-icon"><re-icon icon="camera"></re-icon></div>
+                    <h3 class="feature-title">Photo capture</h3>
+                    <p class="feature-desc">Snap your sales notebook or receipts. AI reads handwriting and printed text alike.</p>
+                </div>
+                <div class="feature-card reveal" style="--reveal-delay: 0.15s">
+                    <div class="feature-icon"><re-icon icon="activity"></re-icon></div>
+                    <h3 class="feature-title">Weekly summaries</h3>
+                    <p class="feature-desc">Not raw numbers, but plain-language analysis about your business. Delivered every Sunday.</p>
+                </div>
+                <div class="feature-card reveal" style="--reveal-delay: 0.2s">
+                    <div class="feature-icon"><re-icon icon="shield"></re-icon></div>
+                    <h3 class="feature-title">Action items</h3>
+                    <p class="feature-desc">Actionable fixes with real naira amounts. "Batch deliveries to save &#8358;7,200/week."</p>
+                </div>
+                <div class="feature-card reveal" style="--reveal-delay: 0.25s">
+                    <div class="feature-icon"><re-icon icon="trending-up"></re-icon></div>
+                    <h3 class="feature-title">Trend tracking</h3>
+                    <p class="feature-desc">See your progress over weeks and months. Spot patterns before they become problems.</p>
+                </div>
+                <div class="feature-card reveal" style="--reveal-delay: 0.3s">
+                    <div class="feature-icon"><re-icon icon="lock"></re-icon></div>
+                    <h3 class="feature-title">Private and secure</h3>
+                    <p class="feature-desc">Your financial data stays yours. End-to-end encrypted. We never share your info.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+    <!-- ============ TESTIMONIALS ============ -->
+    <section class="section testimonials" id="testimonials">
+        <div class="container">
+            <div class="section-header reveal">
+                <span class="section-badge">Real stories</span>
+                <h2 class="section-title">Business owners <span class="gradient-text">love</span> Kobowise</h2>
+            </div>
+            <div class="testimonials-grid">
+                <div class="testimonial-card reveal" style="--reveal-delay: 0.1s">
+                    <div class="testimonial-stars"><re-icon icon="star"></re-icon><re-icon icon="star"></re-icon><re-icon icon="star"></re-icon><re-icon icon="star"></re-icon><re-icon icon="star"></re-icon></div>
+                    <p class="testimonial-text">"I didn't know transport was eating 22% of my revenue until Kobowise showed me. I started batching deliveries and saved &#8358;28,000 last month alone."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar" style="background: #E8622C;">MJ</div>
+                        <div>
+                            <div class="author-name">Mama Joy</div>
+                            <div class="author-biz">Food business, Lagos</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card reveal" style="--reveal-delay: 0.2s">
+                    <div class="testimonial-stars"><re-icon icon="star"></re-icon><re-icon icon="star"></re-icon><re-icon icon="star"></re-icon><re-icon icon="star"></re-icon><re-icon icon="star"></re-icon></div>
+                    <p class="testimonial-text">"Before Kobowise, I was just guessing. Now I know exactly which products make money and which ones I should stop selling."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar" style="background: #34D399;">AK</div>
+                        <div>
+                            <div class="author-name">Adebayo K.</div>
+                            <div class="author-biz">Retail shop, Ibadan</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card reveal" style="--reveal-delay: 0.3s">
+                    <div class="testimonial-stars"><re-icon icon="star"></re-icon><re-icon icon="star"></re-icon><re-icon icon="star"></re-icon><re-icon icon="star"></re-icon><re-icon icon="star"></re-icon></div>
+                    <p class="testimonial-text">"I just send voice notes in Pidgin after work and Kobowise handles everything. E easy like that. The Sunday report na my favorite part."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar" style="background: #60A5FA;">OT</div>
+                        <div>
+                            <div class="author-name">Osas T.</div>
+                            <div class="author-biz">Tailoring, Benin City</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ FAQ ============ -->
+    <section class="section faq" id="faq">
+        <div class="container">
+            <div class="section-header reveal">
+                <span class="section-badge">FAQ</span>
+                <h2 class="section-title">Common questions</h2>
+            </div>
+            <div class="faq-list">
+                <div class="faq-item reveal" style="--reveal-delay: 0.05s">
+                    <button class="faq-question" id="faq-q1">
+                        <span>Is Kobowise really free?</span>
+                        <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer" id="faq-a1">
+                        <p>Yes. Kobowise is completely free to use. We believe every business owner deserves to understand their finances, regardless of budget. We may offer premium features in the future, but the core experience will always be free.</p>
+                    </div>
+                </div>
+                <div class="faq-item reveal" style="--reveal-delay: 0.1s">
+                    <button class="faq-question" id="faq-q2">
+                        <span>Do I need to download an app?</span>
+                        <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer" id="faq-a2">
+                        <p>No. Kobowise works entirely through Telegram, which you probably already have. Just search for @KobowiseBot and start chatting. Zero downloads, zero setup.</p>
+                    </div>
+                </div>
+                <div class="faq-item reveal" style="--reveal-delay: 0.15s">
+                    <button class="faq-question" id="faq-q3">
+                        <span>Can I send voice notes in Pidgin?</span>
+                        <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer" id="faq-a3">
+                        <p>Absolutely. Our AI understands Nigerian English, Pidgin, and various accents. Just speak naturally and we'll extract the numbers perfectly.</p>
+                    </div>
+                </div>
+                <div class="faq-item reveal" style="--reveal-delay: 0.2s">
+                    <button class="faq-question" id="faq-q4">
+                        <span>What kind of businesses does this work for?</span>
+                        <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer" id="faq-a4">
+                        <p>Any small business. Food vendors, tailors, retail shops, barbing salons, laundry services, mini marts, provision stores, if you buy things and sell things, Kobowise can track it and give you insights.</p>
+                    </div>
+                </div>
+                <div class="faq-item reveal" style="--reveal-delay: 0.25s">
+                    <button class="faq-question" id="faq-q5">
+                        <span>Is my financial data safe?</span>
+                        <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer" id="faq-a5">
+                        <p>100%. Your data is encrypted and stored securely. We never share your financial information with anyone. Telegram itself provides end-to-end encryption, and we add our own layer on top.</p>
+                    </div>
+                </div>
+                <div class="faq-item reveal" style="--reveal-delay: 0.3s">
+                    <button class="faq-question" id="faq-q6">
+                        <span>When do I get my weekly summary?</span>
+                        <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </button>
+                    <div class="faq-answer" id="faq-a6">
+                        <p>Every Sunday evening, Kobowise automatically sends your weekly summary via Telegram. You can also request a report anytime by sending /report in the chat.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ FINAL CTA ============ -->
+    <section class="section final-cta">
+        <div class="container">
+            <div class="cta-card reveal">
+                <div class="cta-glow"></div>
+                <h2 class="cta-title">Take control of your <span class="gradient-text">numbers.</span></h2>
+                <p class="cta-subtitle">Join 500+ Nigerian businesses using Kobowise to track sales, spot leaks, and calculate exact profit, all via Telegram.</p>
+                <a href="https://t.me/KobowiseBot" target="_blank" class="btn btn-primary btn-lg">
+                    Get started for free
+                </a>
+                <p class="cta-note">Free forever &bull; No credit card required &bull; Works on Telegram</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ FOOTER ============ -->
+    <footer class="footer">
+        <div class="container footer-container">
+            <div class="footer-brand">
+                <a href="#" class="nav-logo">
+                    <span class="logo-text">Kobo<span class="logo-accent">wise</span></span>
+                </a>
+                <p class="footer-tagline">Know your profit without opening Excel.<br>Every kobo counts.</p>
+            </div>
+            <div class="footer-links">
+                <div class="footer-col">
+                    <h4>Product</h4>
+                    <a href="#how-it-works">How it works</a>
+                    <a href="#features">Features</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Support</h4>
+                    <a href="#faq">FAQ</a>
+                    <a href="https://t.me/KobowiseBot" target="_blank">Contact on Telegram</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Legal</h4>
+                    <a href="privacy.html">Privacy Policy</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Kobowise. Built for Nigerian businesses.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

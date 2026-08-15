@@ -1,0 +1,4 @@
+node_modules/
+.env
+kobowise.db
+*.db-journal
