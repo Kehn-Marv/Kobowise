@@ -3,17 +3,30 @@ const { getAllUsers, getAdminStats, isAdmin, addAdmin, removeAdmin, getAllAdmins
 
 let globalAdminBot = null;
 
-function startAdminBot() {
+function startAdminBot(app, webhookUrl) {
     const token = process.env.ADMIN_BOT_TOKEN;
     if (!token) {
         console.log('⚠️ ADMIN_BOT_TOKEN not provided. Admin bot is disabled.');
         return null;
     }
 
-    const adminBot = new TelegramBot(token, { polling: true });
-    globalAdminBot = adminBot;
-
-    console.log('🛡️ Admin bot started on polling mode');
+    if (webhookUrl) {
+        const adminBot = new TelegramBot(token);
+        globalAdminBot = adminBot;
+        const url = `${webhookUrl}/api/bot/admin`;
+        adminBot.setWebHook(url);
+        if (app) {
+            app.post('/api/bot/admin', (req, res) => {
+                adminBot.processUpdate(req.body);
+                res.sendStatus(200);
+            });
+        }
+        console.log(`🛡️ Admin bot initialized with Webhook: ${url}`);
+    } else {
+        const adminBot = new TelegramBot(token, { polling: true });
+        globalAdminBot = adminBot;
+        console.log('🛡️ Admin bot started on polling mode');
+    }
 
     const adminStates = {};
 
@@ -153,14 +166,14 @@ _Tip: Unauthorized users will not see any replies from this bot (Silent Security
         
         const keyboard = {
             inline_keyboard: [
-                [
-                    { text: '✅ Finish & Broadcast', callback_data: 'broadcast_finish' },
-                    { text: '❌ Cancel', callback_data: 'broadcast_cancel' }
-                ]
+                [{ text: '📢 Send to Everyone', callback_data: 'broadcast_finish_all' }],
+                [{ text: '🆓 Send to Free Users', callback_data: 'broadcast_finish_free' }],
+                [{ text: '🌟 Send to Premium Users', callback_data: 'broadcast_finish_premium' }],
+                [{ text: '❌ Cancel', callback_data: 'broadcast_cancel' }]
             ]
         };
 
-        const prompt = await adminBot.sendMessage(msg.chat.id, 'Please send all the messages, photos, voice notes, etc. you want to broadcast.\n\nWhen you are done sending everything, click **Finish & Broadcast** below.', { parse_mode: 'Markdown', reply_markup: keyboard });
+        const prompt = await adminBot.sendMessage(msg.chat.id, 'Please send all the messages, photos, voice notes, etc. you want to broadcast.\n\nWhen you are done sending everything, choose your target audience below.', { parse_mode: 'Markdown', reply_markup: keyboard });
         adminStates[msg.from.id] = { action: 'broadcast', promptMsgId: prompt.message_id, messages: [] };
     });
 
@@ -406,12 +419,13 @@ _Tip: Unauthorized users will not see any replies from this bot (Silent Security
                 await adminBot.sendMessage(msg.chat.id, '❌ Broadcast cancelled.');
             }
             await adminBot.answerCallbackQuery(query.id);
-        } else if (data === 'broadcast_finish') {
+        } else if (data.startsWith('broadcast_finish_')) {
             const state = adminStates[query.from.id];
             if (!state || state.action !== 'broadcast') {
                 return adminBot.answerCallbackQuery(query.id, { text: 'No active broadcast session.' });
             }
 
+            const targetTier = data.replace('broadcast_finish_', '');
             const messages = state.messages;
             try { await adminBot.deleteMessage(msg.chat.id, state.promptMsgId); } catch(e){}
             delete adminStates[query.from.id];
@@ -425,11 +439,18 @@ _Tip: Unauthorized users will not see any replies from this bot (Silent Security
             const chatId = msg.chat.id;
 
             try {
-                const users = await getAllUsers();
+                let users = await getAllUsers();
+                if (targetTier === 'free') {
+                    users = users.filter(u => Number(u.is_premium) === 0);
+                } else if (targetTier === 'premium') {
+                    users = users.filter(u => Number(u.is_premium) === 1);
+                }
+
                 let successCount = 0;
                 let failCount = 0;
 
-                await adminBot.sendMessage(chatId, `📢 Broadcasting ${messages.length} message(s) to ${users.length} users...`);
+                const targetLabel = targetTier === 'all' ? 'Everyone' : (targetTier === 'free' ? 'Free Users' : 'Premium Users');
+                await adminBot.sendMessage(chatId, `📢 Broadcasting ${messages.length} message(s) to ${users.length} users (${targetLabel})...`);
 
                 const { getBot } = require('./telegram');
                 const mainBot = getBot();

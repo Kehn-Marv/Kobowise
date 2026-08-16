@@ -36,10 +36,6 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.get('/dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
-});
-
 // ---------- Start ----------
 async function start() {
     try {
@@ -61,9 +57,12 @@ async function start() {
             process.exit(1);
         }
 
+        // Determine Webhook URL (only in production)
+        const WEBHOOK_URL = process.env.NODE_ENV === 'production' ? 'https://kobowise.onrender.com' : null;
+
         // Initialize Telegram bot (only if token is set)
         if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_BOT_TOKEN !== 'your_telegram_bot_token_here') {
-            initBot();
+            initBot(app, WEBHOOK_URL);
             console.log('✅ Telegram main bot started');
         } else {
             console.log('⚠️  Telegram main bot skipped (no token set in .env)');
@@ -71,7 +70,7 @@ async function start() {
 
         // Initialize Admin bot
         if (process.env.ADMIN_BOT_TOKEN && process.env.ADMIN_BOT_TOKEN !== 'your_admin_bot_token_here') {
-            startAdminBot();
+            startAdminBot(app, WEBHOOK_URL);
             console.log('✅ Telegram admin bot started');
         } else {
             console.log('⚠️  Telegram admin bot skipped (no token set in .env)');
@@ -81,7 +80,6 @@ async function start() {
         app.listen(PORT, () => {
             console.log(`\n🩺 Kobowise is running!`);
             console.log(`   Landing page: http://localhost:${PORT}`);
-            console.log(`   Dashboard:    http://localhost:${PORT}/dashboard.html`);
             console.log(`   API:          http://localhost:${PORT}/api\n`);
         });
     } catch (err) {

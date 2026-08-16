@@ -7,11 +7,25 @@ const { formatNaira, getWeekRange, getPreviousWeekRange } = require('../utils/he
 
 let bot = null;
 
-function initBot() {
+function initBot(app, webhookUrl) {
     const token = process.env.TELEGRAM_BOT_TOKEN;
     if (!token) throw new Error('TELEGRAM_BOT_TOKEN is required');
 
-    bot = new TelegramBot(token, { polling: true });
+    if (webhookUrl) {
+        bot = new TelegramBot(token);
+        const url = `${webhookUrl}/api/bot/main`;
+        bot.setWebHook(url);
+        if (app) {
+            app.post('/api/bot/main', (req, res) => {
+                bot.processUpdate(req.body);
+                res.sendStatus(200);
+            });
+        }
+        console.log(`🤖 Telegram bot initialized with Webhook: ${url}`);
+    } else {
+        bot = new TelegramBot(token, { polling: true });
+        console.log('🤖 Telegram bot is listening via Polling...');
+    }
 
     // Register handlers
     bot.onText(/\/start/, handleStart);
@@ -40,7 +54,6 @@ function initBot() {
     // Schedule weekly reports (every Sunday at 6 PM WAT)
     scheduleWeeklyReports();
 
-    console.log('🤖 Telegram bot is listening...');
     return bot;
 }
 
@@ -161,6 +174,27 @@ async function handlePremium(msg) {
         console.error('Premium error:', err);
         await safeSend(chatId, '❌ Could not retrieve premium status at this time. Please try again.');
     }
+}
+
+// ============ /HELP ============
+async function handleHelp(msg) {
+    const chatId = msg.chat.id;
+    await safeSend(chatId, 
+`🤖 *Kobowise Help Desk*
+
+Here are the commands you can use:
+/start - Restart the bot and update settings
+/status - Check your current plan and usage
+/report - Manually generate a financial health report
+/balance - Quick overview of total revenue & expenses
+/export - Download your transactions as a PDF
+/premium - View and upgrade to the Premium plan
+/settings - Change your timezone or notifications
+/help - Show this message
+
+*How to use me:*
+Just send me text ("Sold a shoe for 5000"), a voice note, or a photo of a receipt, and I'll automatically track it!`, 
+    { parse_mode: 'Markdown' });
 }
 
 // ============ /STATUS ============
@@ -551,7 +585,7 @@ async function handleText(msg) {
         if (err.message.includes('GEMINI_API_KEY')) {
             await safeSend(chatId, '⚠️ AI is not configured yet. The admin needs to set up the GEMINI_API_KEY.');
         } else {
-            await safeSend(chatId, '❌ Sorry, something went wrong with the database or AI. Please try again.');
+            await safeSend(chatId, '❌ Sorry, I didn\'t quite catch that. Try sending a voice note, or type /help to see my commands.');
         }
     }
 }
@@ -601,7 +635,7 @@ async function handleVoice(msg) {
         }
     } catch (err) {
         console.error('Voice processing error:', err);
-        await safeSend(chatId, '❌ Couldn\'t process your voice note (connection might be slow). Try speaking a bit clearer, or type it out instead.');
+        await safeSend(chatId, '❌ Sorry, I couldn\'t process your voice note. Try speaking a bit clearer, type it out, or send /help to see my commands.');
     }
 }
 
@@ -676,7 +710,7 @@ async function handlePhoto(msg) {
         }
     } catch (err) {
         console.error('Photo processing error:', err);
-        await safeSend(chatId, '❌ Couldn\'t read your photo (connection might be slow). Try taking a clearer picture with better lighting.');
+        await safeSend(chatId, '❌ Sorry, I couldn\'t read your photo. Try taking a clearer picture with better lighting, or send /help to see my commands.');
     }
 }
 
