@@ -132,7 +132,7 @@ async function findUserByTelegramId(telegramId) {
 async function createUser(telegramId, username) {
     const client = getDB();
     const result = await client.execute({
-        sql: 'INSERT INTO users (telegram_id, telegram_username) VALUES (?, ?) RETURNING *',
+        sql: 'INSERT INTO users (telegram_id, telegram_username) VALUES (?, ?) ON CONFLICT(telegram_id) DO UPDATE SET telegram_username=excluded.telegram_username RETURNING *',
         args: [String(telegramId), username || null]
     });
     return result.rows[0];
