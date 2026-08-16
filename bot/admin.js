@@ -316,23 +316,22 @@ _Tip: Unauthorized users will not see any replies from this bot (Silent Security
             await executeBroadcastDeletion(chatId, broadcastId, targetTelegramId);
         } else if (state.action === 'giftpremium') {
             try { await adminBot.deleteMessage(chatId, state.promptMsgId); } catch(e){}
-            delete adminStates[msg.from.id];
             const targetId = msg.text ? msg.text.trim() : '';
-            if (!targetId || isNaN(targetId)) return adminBot.sendMessage(chatId, `❌ Invalid ID.`);
-            try {
-                const { getDB } = require('../db/schema');
-                const client = getDB();
-                await client.execute({ sql: 'UPDATE users SET is_premium = 1 WHERE telegram_id = ?', args: [targetId] });
-                await adminBot.sendMessage(chatId, `✅ User ${targetId} is now Premium.`);
-                
-                const { getBot } = require('./telegram');
-                const mainBot = getBot();
-                if (mainBot) {
-                    await mainBot.sendMessage(targetId, '🎉 *Premium Activated!*\n\nAn admin has manually gifted you Premium. You now have unlimited access to Kobowise Premium!', { parse_mode: 'Markdown' }).catch(()=>{});
-                }
-            } catch (e) {
-                await adminBot.sendMessage(chatId, `❌ Failed: ${e.message}`);
+            if (!targetId || isNaN(targetId)) {
+                delete adminStates[msg.from.id];
+                return adminBot.sendMessage(chatId, `❌ Invalid ID.`);
             }
+            
+            const keyboard = {
+                inline_keyboard: [
+                    [{ text: '1 Day', callback_data: `gift_${targetId}_1` }, { text: '1 Week', callback_data: `gift_${targetId}_7` }],
+                    [{ text: '1 Month (30d)', callback_data: `gift_${targetId}_30` }, { text: '1 Year', callback_data: `gift_${targetId}_365` }],
+                    [{ text: 'Lifetime', callback_data: `gift_${targetId}_lifetime` }],
+                    [{ text: '❌ Cancel', callback_data: 'gift_cancel' }]
+                ]
+            };
+            const prompt = await adminBot.sendMessage(chatId, `How long should User ${targetId} have Premium?`, { reply_markup: keyboard });
+            adminStates[msg.from.id] = { action: 'giftpremium_duration', promptMsgId: prompt.message_id };
         } else if (state.action === 'revokepremium') {
             try { await adminBot.deleteMessage(chatId, state.promptMsgId); } catch(e){}
             delete adminStates[msg.from.id];
@@ -523,6 +522,55 @@ _Tip: Unauthorized users will not see any replies from this bot (Silent Security
             await updateAdminSettings(query.from.id, newPref);
             await sendSettingsMenu(msg.chat.id, query.from.id, msg.message_id);
             await adminBot.answerCallbackQuery(query.id, { text: 'Settings updated!' });
+        } else if (data === 'gift_cancel') {
+            const state = adminStates[query.from.id];
+            if (state && state.action === 'giftpremium_duration') {
+                try { await adminBot.deleteMessage(msg.chat.id, state.promptMsgId); } catch(e){}
+                delete adminStates[query.from.id];
+                await adminBot.sendMessage(msg.chat.id, '❌ Action cancelled.');
+            }
+            await adminBot.answerCallbackQuery(query.id);
+        } else if (data.startsWith('gift_')) {
+            const parts = data.split('_');
+            const targetId = parts[1];
+            const duration = parts[2];
+            
+            const state = adminStates[query.from.id];
+            if (state && state.action === 'giftpremium_duration') {
+                try { await adminBot.deleteMessage(msg.chat.id, state.promptMsgId); } catch(e){}
+                delete adminStates[query.from.id];
+            }
+            
+            try {
+                const { getDB } = require('../db/schema');
+                const client = getDB();
+                
+                let expiresAt = null;
+                let durationText = 'Lifetime';
+                
+                if (duration !== 'lifetime') {
+                    const days = parseInt(duration);
+                    const d = new Date();
+                    d.setDate(d.getDate() + days);
+                    expiresAt = d.toISOString();
+                    durationText = `${days} Days`;
+                }
+                
+                await client.execute({ 
+                    sql: 'UPDATE users SET is_premium = 1, premium_expires_at = ? WHERE telegram_id = ?', 
+                    args: [expiresAt, targetId] 
+                });
+                await adminBot.sendMessage(msg.chat.id, `✅ User ${targetId} is now Premium for: ${durationText}`);
+                
+                const { getBot } = require('./telegram');
+                const mainBot = getBot();
+                if (mainBot) {
+                    await mainBot.sendMessage(targetId, `🎉 *Premium Activated!*\n\nAn admin has manually gifted you Premium.\nDuration: ${durationText}\n\nYou now have unlimited access to Kobowise Premium!`, { parse_mode: 'Markdown' }).catch(()=>{});
+                }
+            } catch (e) {
+                await adminBot.sendMessage(msg.chat.id, `❌ Failed: ${e.message}`);
+            }
+            await adminBot.answerCallbackQuery(query.id);
         } else if (data.startsWith('approve_premium_')) {
             const userId = parseInt(data.split('_')[2]);
             const { getDB } = require('../db/schema');
