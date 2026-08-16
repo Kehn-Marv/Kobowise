@@ -621,22 +621,9 @@ async function handlePhoto(msg) {
             await updateUser(telegramId, { onboarding_step: 'complete' });
 
             try {
-                const { adminBot } = require('./admin');
-                const adminId = process.env.MASTER_ADMIN_ID; 
+                const { forwardPremiumReceipt } = require('./admin');
                 const photo = msg.photo[msg.photo.length - 1]; 
-                
-                await adminBot.sendPhoto(adminId, photo.file_id, {
-                    caption: `💳 *Premium Payment Verification*\n\nUser: ${user.business_name} (${user.telegram_username ? '@'+user.telegram_username : 'No username'})\nTelegram ID: \`${user.telegram_id}\`\n\nPlease verify the receipt and approve.`,
-                    parse_mode: 'Markdown',
-                    reply_markup: {
-                        inline_keyboard: [
-                            [
-                                { text: '✅ Approve Premium', callback_data: `approve_premium_${user.id}` },
-                                { text: '❌ Reject', callback_data: `reject_premium_${user.id}` }
-                            ]
-                        ]
-                    }
-                });
+                await forwardPremiumReceipt(user.id, user.business_name, user.telegram_username, user.telegram_id, photo.file_id);
             } catch (e) {
                 console.error("Failed to forward receipt to admin:", e);
             }
