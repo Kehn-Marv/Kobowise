@@ -1596,8 +1596,9 @@ button {
     }
 
     .footer-links {
-        flex-direction: column;
-        gap: var(--space-2xl);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-lg);
     }
 
     .phone-float-card {
