@@ -560,11 +560,11 @@ async function sendAdminAlert(messageText) {
 }
 
 // Helper to forward premium receipts to admin
-async function forwardPremiumReceipt(userId, businessName, telegramUsername, telegramId, photoFileId) {
+async function forwardPremiumReceipt(userId, businessName, telegramUsername, telegramId, photoBuffer) {
     if (!globalAdminBot) return;
     const adminId = process.env.MASTER_ADMIN_ID;
     try {
-        await globalAdminBot.sendPhoto(adminId, photoFileId, {
+        await globalAdminBot.sendPhoto(adminId, photoBuffer, {
             caption: `💳 *Premium Payment Verification*\n\nUser: ${businessName} (${telegramUsername ? '@'+telegramUsername : 'No username'})\nTelegram ID: \`${telegramId}\`\n\nPlease verify the receipt and approve.`,
             parse_mode: 'Markdown',
             reply_markup: {
@@ -575,7 +575,7 @@ async function forwardPremiumReceipt(userId, businessName, telegramUsername, tel
                     ]
                 ]
             }
-        });
+        }, { filename: 'receipt.jpg', contentType: 'image/jpeg' });
     } catch (e) {
         console.error("Failed to forward premium receipt:", e);
     }

@@ -623,7 +623,12 @@ async function handlePhoto(msg) {
             try {
                 const { forwardPremiumReceipt } = require('./admin');
                 const photo = msg.photo[msg.photo.length - 1]; 
-                await forwardPremiumReceipt(user.id, user.business_name, user.telegram_username, user.telegram_id, photo.file_id);
+                
+                const fileUrl = await bot.getFileLink(photo.file_id);
+                const response = await fetch(fileUrl);
+                const buffer = Buffer.from(await response.arrayBuffer());
+
+                await forwardPremiumReceipt(user.id, user.business_name, user.telegram_username, user.telegram_id, buffer);
             } catch (e) {
                 console.error("Failed to forward receipt to admin:", e);
             }
