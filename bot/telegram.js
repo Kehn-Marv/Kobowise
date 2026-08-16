@@ -309,32 +309,53 @@ async function handleExport(msg) {
             return;
         }
 
-        // Build CSV content
-        let csv = 'Date,Type,Category,Amount (₦),Description,Source\n';
-        for (const tx of transactions) {
-            const desc = (tx.description || '').replace(/"/g, '""');
-            csv += `${tx.date},${tx.type},${tx.category},${Number(tx.amount).toFixed(2)},"${desc}",${tx.source || 'text'}\n`;
-        }
-
-        // Calculate totals for the summary row
+        // Build PDF content
+        const PDFDocument = require('pdfkit-table');
+        const doc = new PDFDocument({ margin: 30, size: 'A4' });
+        
+        const buffers = [];
+        doc.on('data', buffers.push.bind(buffers));
+        
         const totalIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
         const totalExpense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
-        csv += `\n,,,,,\n`;
-        csv += `,TOTAL REVENUE,,${totalIncome.toFixed(2)},,\n`;
-        csv += `,TOTAL EXPENSES,,${totalExpense.toFixed(2)},,\n`;
-        csv += `,NET PROFIT,,${(totalIncome - totalExpense).toFixed(2)},,\n`;
+        
+        doc.on('end', async () => {
+            const pdfData = Buffer.concat(buffers);
+            const fileName = `Kobowise_${user.business_name.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
 
-        // Send as document
-        const fileName = `Kobowise_${user.business_name.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
-        const fileBuffer = Buffer.from(csv, 'utf-8');
-
-        await bot.sendDocument(chatId, fileBuffer, {
-            caption: `📊 *${user.business_name}* — Full Export\n\n📝 ${transactions.length} transactions\n💰 Revenue: ${formatNaira(totalIncome)}\n💸 Expenses: ${formatNaira(totalExpense)}\n📈 Profit: ${formatNaira(totalIncome - totalExpense)}`,
-            parse_mode: 'Markdown'
-        }, {
-            filename: fileName,
-            contentType: 'text/csv'
+            await bot.sendDocument(chatId, pdfData, {
+                caption: `📊 *${user.business_name}* — Full Export\n\n📝 ${transactions.length} transactions\n💰 Revenue: ${formatNaira(totalIncome)}\n💸 Expenses: ${formatNaira(totalExpense)}\n📈 Profit: ${formatNaira(totalIncome - totalExpense)}`,
+                parse_mode: 'Markdown'
+            }, {
+                filename: fileName,
+                contentType: 'application/pdf'
+            });
         });
+
+        doc.fontSize(20).text(`${user.business_name} - Transaction Report`, { align: 'center' });
+        doc.moveDown();
+        doc.fontSize(12).text(`Generated on: ${new Date().toISOString().split('T')[0]}`, { align: 'center' });
+        doc.moveDown();
+
+        const tableArray = {
+            headers: ["Date", "Type", "Category", "Amount", "Description"],
+            rows: transactions.map(t => [
+                t.date,
+                t.type.toUpperCase(),
+                t.category,
+                Number(t.amount).toLocaleString('en-NG', { style: 'currency', currency: 'NGN' }),
+                t.description || ''
+            ])
+        };
+
+        tableArray.rows.push(["", "", "", "", ""]); // empty divider
+        tableArray.rows.push(["TOTALS", "", "", "", ""]);
+        tableArray.rows.push(["", "Revenue", "", Number(totalIncome).toLocaleString('en-NG', { style: 'currency', currency: 'NGN' }), ""]);
+        tableArray.rows.push(["", "Expenses", "", Number(totalExpense).toLocaleString('en-NG', { style: 'currency', currency: 'NGN' }), ""]);
+        tableArray.rows.push(["", "Net Profit", "", Number(totalIncome - totalExpense).toLocaleString('en-NG', { style: 'currency', currency: 'NGN' }), ""]);
+
+        await doc.table(tableArray, { width: 535 });
+        doc.end();
     } catch (err) {
         console.error('Export error:', err);
         await safeSend(chatId, '❌ Could not generate your export. Please try again.');

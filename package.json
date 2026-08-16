@@ -12,8 +12,16 @@
     "@libsql/client": "^0.14.0",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "node-telegram-bot-api": "^0.66.0"
+    "node-telegram-bot-api": "^0.66.0",
+    "pdfkit-table": "^0.2.11"
   },
-  "keywords": ["kobowise", "ai", "fintech", "nigeria", "sme", "telegram-bot"],
+  "keywords": [
+    "kobowise",
+    "ai",
+    "fintech",
+    "nigeria",
+    "sme",
+    "telegram-bot"
+  ],
   "license": "MIT"
 }
