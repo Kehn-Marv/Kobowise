@@ -204,78 +204,34 @@ _Tip: Unauthorized users will not see any replies from this bot (Silent Security
         }
     });
 
-    adminBot.onText(/^\/giftpremium (\d+)$/, async (msg, match) => {
+    adminBot.onText(/^\/giftpremium$/, async (msg) => {
         if (!(await checkAuth(msg))) return;
-        const targetId = match[1];
-        try {
-            const { getDB } = require('../db/schema');
-            const client = getDB();
-            await client.execute({ sql: 'UPDATE users SET is_premium = 1 WHERE telegram_id = ?', args: [targetId] });
-            await adminBot.sendMessage(msg.chat.id, `✅ User ${targetId} is now Premium.`);
-            
-            const { getBot } = require('./telegram');
-            const mainBot = getBot();
-            if (mainBot) {
-                await mainBot.sendMessage(targetId, '🎉 *Premium Activated!*\n\nAn admin has manually gifted you Premium. You now have unlimited access to Kobowise Premium!', { parse_mode: 'Markdown' }).catch(()=>{});
-            }
-        } catch (e) {
-            await adminBot.sendMessage(msg.chat.id, `❌ Failed: ${e.message}`);
-        }
+        const prompt = await adminBot.sendMessage(msg.chat.id, 'Please enter the Telegram ID of the user you want to gift premium to:\n\nType /cancel to abort.', { parse_mode: 'Markdown' });
+        adminStates[msg.from.id] = { action: 'giftpremium', promptMsgId: prompt.message_id };
     });
 
-    adminBot.onText(/^\/revokepremium (\d+)$/, async (msg, match) => {
+    adminBot.onText(/^\/revokepremium$/, async (msg) => {
         if (!(await checkAuth(msg))) return;
-        const targetId = match[1];
-        try {
-            const { getDB } = require('../db/schema');
-            const client = getDB();
-            await client.execute({ sql: 'UPDATE users SET is_premium = 0 WHERE telegram_id = ?', args: [targetId] });
-            await adminBot.sendMessage(msg.chat.id, `✅ User ${targetId} is no longer Premium.`);
-        } catch (e) {
-            await adminBot.sendMessage(msg.chat.id, `❌ Failed: ${e.message}`);
-        }
+        const prompt = await adminBot.sendMessage(msg.chat.id, 'Please enter the Telegram ID of the user you want to revoke premium from:\n\nType /cancel to abort.', { parse_mode: 'Markdown' });
+        adminStates[msg.from.id] = { action: 'revokepremium', promptMsgId: prompt.message_id };
     });
 
-    adminBot.onText(/^\/block (\d+)$/, async (msg, match) => {
+    adminBot.onText(/^\/block$/, async (msg) => {
         if (!(await checkAuth(msg))) return;
-        const targetId = match[1];
-        try {
-            const { blockUser } = require('../db/schema');
-            await blockUser(targetId);
-            await adminBot.sendMessage(msg.chat.id, `🚫 User ${targetId} has been blocked.`);
-        } catch (e) {
-            await adminBot.sendMessage(msg.chat.id, `❌ Failed: ${e.message}`);
-        }
+        const prompt = await adminBot.sendMessage(msg.chat.id, 'Please enter the Telegram ID of the user you want to block:\n\nType /cancel to abort.', { parse_mode: 'Markdown' });
+        adminStates[msg.from.id] = { action: 'block', promptMsgId: prompt.message_id };
     });
 
-    adminBot.onText(/^\/unblock (\d+)$/, async (msg, match) => {
+    adminBot.onText(/^\/unblock$/, async (msg) => {
         if (!(await checkAuth(msg))) return;
-        const targetId = match[1];
-        try {
-            const { unblockUser } = require('../db/schema');
-            await unblockUser(targetId);
-            await adminBot.sendMessage(msg.chat.id, `✅ User ${targetId} has been unblocked.`);
-        } catch (e) {
-            await adminBot.sendMessage(msg.chat.id, `❌ Failed: ${e.message}`);
-        }
+        const prompt = await adminBot.sendMessage(msg.chat.id, 'Please enter the Telegram ID of the user you want to unblock:\n\nType /cancel to abort.', { parse_mode: 'Markdown' });
+        adminStates[msg.from.id] = { action: 'unblock', promptMsgId: prompt.message_id };
     });
 
-    adminBot.onText(/^\/msg (\d+) (.+)$/, async (msg, match) => {
+    adminBot.onText(/^\/msg$/, async (msg) => {
         if (!(await checkAuth(msg))) return;
-        const targetId = match[1];
-        const textMsg = match[2];
-        try {
-            const { getBot } = require('./telegram');
-            const mainBot = getBot();
-            if (mainBot) {
-                await mainBot.sendMessage(targetId, `💬 *Message from Support:*\n\n${textMsg}`, { parse_mode: 'Markdown' }).catch(()=>{});
-                await adminBot.sendMessage(msg.chat.id, `✅ Message sent to ${targetId}.`);
-            } else {
-                await adminBot.sendMessage(msg.chat.id, `❌ Main bot is not running.`);
-            }
-        } catch (e) {
-            await adminBot.sendMessage(msg.chat.id, `❌ Failed to send message: ${e.message}`);
-        }
+        const prompt = await adminBot.sendMessage(msg.chat.id, 'Please enter the Telegram ID of the user, followed by a space, then your message.\nExample: `123456789 Hello there!`\n\nType /cancel to abort.', { parse_mode: 'Markdown' });
+        adminStates[msg.from.id] = { action: 'msg', promptMsgId: prompt.message_id };
     });
 
     adminBot.onText(/^\/broadcast$/, async (msg) => {
@@ -358,6 +314,84 @@ _Tip: Unauthorized users will not see any replies from this bot (Silent Security
             }
 
             await executeBroadcastDeletion(chatId, broadcastId, targetTelegramId);
+        } else if (state.action === 'giftpremium') {
+            try { await adminBot.deleteMessage(chatId, state.promptMsgId); } catch(e){}
+            delete adminStates[msg.from.id];
+            const targetId = msg.text ? msg.text.trim() : '';
+            if (!targetId || isNaN(targetId)) return adminBot.sendMessage(chatId, `❌ Invalid ID.`);
+            try {
+                const { getDB } = require('../db/schema');
+                const client = getDB();
+                await client.execute({ sql: 'UPDATE users SET is_premium = 1 WHERE telegram_id = ?', args: [targetId] });
+                await adminBot.sendMessage(chatId, `✅ User ${targetId} is now Premium.`);
+                
+                const { getBot } = require('./telegram');
+                const mainBot = getBot();
+                if (mainBot) {
+                    await mainBot.sendMessage(targetId, '🎉 *Premium Activated!*\n\nAn admin has manually gifted you Premium. You now have unlimited access to Kobowise Premium!', { parse_mode: 'Markdown' }).catch(()=>{});
+                }
+            } catch (e) {
+                await adminBot.sendMessage(chatId, `❌ Failed: ${e.message}`);
+            }
+        } else if (state.action === 'revokepremium') {
+            try { await adminBot.deleteMessage(chatId, state.promptMsgId); } catch(e){}
+            delete adminStates[msg.from.id];
+            const targetId = msg.text ? msg.text.trim() : '';
+            if (!targetId || isNaN(targetId)) return adminBot.sendMessage(chatId, `❌ Invalid ID.`);
+            try {
+                const { getDB } = require('../db/schema');
+                const client = getDB();
+                await client.execute({ sql: 'UPDATE users SET is_premium = 0 WHERE telegram_id = ?', args: [targetId] });
+                await adminBot.sendMessage(chatId, `✅ User ${targetId} is no longer Premium.`);
+            } catch (e) {
+                await adminBot.sendMessage(chatId, `❌ Failed: ${e.message}`);
+            }
+        } else if (state.action === 'block') {
+            try { await adminBot.deleteMessage(chatId, state.promptMsgId); } catch(e){}
+            delete adminStates[msg.from.id];
+            const targetId = msg.text ? msg.text.trim() : '';
+            if (!targetId || isNaN(targetId)) return adminBot.sendMessage(chatId, `❌ Invalid ID.`);
+            try {
+                const { blockUser } = require('../db/schema');
+                await blockUser(targetId);
+                await adminBot.sendMessage(chatId, `🚫 User ${targetId} has been blocked.`);
+            } catch (e) {
+                await adminBot.sendMessage(chatId, `❌ Failed: ${e.message}`);
+            }
+        } else if (state.action === 'unblock') {
+            try { await adminBot.deleteMessage(chatId, state.promptMsgId); } catch(e){}
+            delete adminStates[msg.from.id];
+            const targetId = msg.text ? msg.text.trim() : '';
+            if (!targetId || isNaN(targetId)) return adminBot.sendMessage(chatId, `❌ Invalid ID.`);
+            try {
+                const { unblockUser } = require('../db/schema');
+                await unblockUser(targetId);
+                await adminBot.sendMessage(chatId, `✅ User ${targetId} has been unblocked.`);
+            } catch (e) {
+                await adminBot.sendMessage(chatId, `❌ Failed: ${e.message}`);
+            }
+        } else if (state.action === 'msg') {
+            try { await adminBot.deleteMessage(chatId, state.promptMsgId); } catch(e){}
+            delete adminStates[msg.from.id];
+            const args = msg.text ? msg.text.trim().split(/\s+/) : [];
+            const targetId = args[0];
+            const textMsg = args.slice(1).join(' ');
+            
+            if (!targetId || isNaN(targetId) || !textMsg) {
+                return adminBot.sendMessage(chatId, `❌ Invalid format. Please provide ID and message.`);
+            }
+            try {
+                const { getBot } = require('./telegram');
+                const mainBot = getBot();
+                if (mainBot) {
+                    await mainBot.sendMessage(targetId, `💬 *Message from Support:*\n\n${textMsg}`, { parse_mode: 'Markdown' }).catch(()=>{});
+                    await adminBot.sendMessage(chatId, `✅ Message sent to ${targetId}.`);
+                } else {
+                    await adminBot.sendMessage(chatId, `❌ Main bot is not running.`);
+                }
+            } catch (e) {
+                await adminBot.sendMessage(chatId, `❌ Failed to send message: ${e.message}`);
+            }
         } else if (state.action === 'broadcast') {
             // Push message to the queue instead of broadcasting immediately
             state.messages.push(msg);
