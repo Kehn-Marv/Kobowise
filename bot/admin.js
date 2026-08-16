@@ -68,13 +68,19 @@ _Tip: Unauthorized users will not see any replies from this bot (Silent Security
         try {
             const stats = await getAdminStats();
             let text = `📊 *Kobowise Platform Stats*\n\n`;
-            text += `👥 Total Users: ${stats.totalUsers}\n`;
-            text += `🟢 Active (24h): ${stats.active24h}\n`;
-            text += `⭐ Premium Users: ${stats.premiumUsers}\n\n`;
-            text += `🌐 *Top Regions:*\n`;
-            for (const r of stats.regions) text += `• ${r.region || 'Unknown'}: ${r.count}\n`;
+            text += `👥 Total Users: ${stats.users.total}\n`;
+            text += `⭐ Premium Users: ${stats.users.premium}\n\n`;
+            text += `📈 Total Transactions: ${stats.transactions.total}\n`;
+            text += `🔥 Today's Transactions: ${stats.transactions.today}\n`;
+            if (stats.transactions.peak_hour_utc) {
+                text += `⏰ Peak Hour (UTC): ${stats.transactions.peak_hour_utc}:00\n`;
+            }
+            text += `\n🌐 *Top Regions:*\n`;
+            for (const r of stats.users.top_locations) text += `• ${r.location || 'Unknown'}: ${r.count}\n`;
             text += `\n🗣️ *Languages:*\n`;
-            for (const l of stats.languages) text += `• ${l.lang || 'Unknown'}: ${l.count}\n`;
+            for (const l of stats.users.languages) text += `• ${l.lang || 'Unknown'}: ${l.count}\n`;
+            text += `\n📥 *Input Sources:*\n`;
+            for (const s of stats.transactions.sources) text += `• ${s.source || 'text'}: ${s.count}\n`;
 
             await adminBot.sendMessage(chatId, text, { parse_mode: 'Markdown' });
         } catch (e) {
