@@ -74,6 +74,10 @@ async function safeSend(chatId, text, options) {
  * Returns null if allowed, or a message string to send if blocked.
  */
 async function enforceRateLimit(user) {
+    if (Number(user.is_blocked) === 1) {
+        return `🚫 *Account Suspended*\n\nYour account has been restricted by an administrator. Please contact support if you believe this is a mistake.`;
+    }
+
     const usage = await checkAndIncrementUsage(user.id);
 
     if (!usage.allowed) {
@@ -148,6 +152,7 @@ async function handlePremium(msg) {
 
     try {
         const user = await findUserByTelegramId(telegramId);
+        if (user && Number(user.is_blocked) === 1) return;
         const isPremium = user && Number(user.is_premium) === 1;
 
         if (isPremium) {
@@ -204,6 +209,7 @@ async function handleStatus(msg) {
 
     try {
         const user = await findUserByTelegramId(telegramId);
+        if (user && Number(user.is_blocked) === 1) return;
         if (!user || user.onboarding_step !== 'complete') {
             await safeSend(chatId, 'Please complete setup first! Send /start');
             return;
@@ -812,18 +818,16 @@ function formatTransactionContext(transactions) {
 
 // ============ WEEKLY REPORT SCHEDULER ============
 function scheduleWeeklyReports() {
-    // Check every hour if it's Sunday 6 PM WAT (5 PM UTC)
-    setInterval(async () => {
-        const now = new Date();
-        const utcHour = now.getUTCHours();
-        const utcDay = now.getUTCDay(); // 0 = Sunday
-
-        // Sunday at 5 PM UTC (6 PM WAT)
-        if (utcDay === 0 && utcHour === 17) {
-            console.log('📋 Generating weekly reports...');
-            await sendWeeklyReports();
-        }
-    }, 60 * 60 * 1000); // Check every hour
+    const cron = require('node-cron');
+    
+    // '0 18 * * 0' -> 6:00 PM (18:00) on Sunday (0)
+    cron.schedule('0 18 * * 0', async () => {
+        console.log('📋 Generating weekly reports (CRON)...');
+        await sendWeeklyReports();
+    }, {
+        scheduled: true,
+        timezone: "Africa/Lagos"
+    });
 }
 
 async function sendWeeklyReports() {

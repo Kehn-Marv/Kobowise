@@ -101,6 +101,7 @@ async function initDB() {
         'ALTER TABLE users ADD COLUMN location TEXT',
         'ALTER TABLE admins ADD COLUMN notify_preference INTEGER DEFAULT 1', // 0=Off, 1=Realtime, 2=Daily
         'ALTER TABLE broadcasts ADD COLUMN is_deleted INTEGER DEFAULT 0',
+        'ALTER TABLE users ADD COLUMN is_blocked INTEGER DEFAULT 0',
     ];
 
     for (const sql of migrations) {
@@ -136,6 +137,22 @@ async function createUser(telegramId, username) {
         args: [String(telegramId), username || null]
     });
     return result.rows[0];
+}
+
+async function blockUser(telegramId) {
+    const client = getDB();
+    await client.execute({
+        sql: 'UPDATE users SET is_blocked = 1 WHERE telegram_id = ?',
+        args: [String(telegramId)]
+    });
+}
+
+async function unblockUser(telegramId) {
+    const client = getDB();
+    await client.execute({
+        sql: 'UPDATE users SET is_blocked = 0 WHERE telegram_id = ?',
+        args: [String(telegramId)]
+    });
 }
 
 async function updateUser(telegramId, updates) {
@@ -645,5 +662,7 @@ module.exports = {
     getBroadcastLogs,
     getRecentBroadcasts,
     markBroadcastDeleted,
+    blockUser,
+    unblockUser,
     FREE_DAILY_LIMIT
 };

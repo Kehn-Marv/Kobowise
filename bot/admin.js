@@ -10,8 +10,10 @@ function startAdminBot(app, webhookUrl) {
         return null;
     }
 
+    let adminBot;
+
     if (webhookUrl) {
-        const adminBot = new TelegramBot(token);
+        adminBot = new TelegramBot(token);
         globalAdminBot = adminBot;
         const url = `${webhookUrl}/api/bot/admin`;
         adminBot.setWebHook(url);
@@ -23,7 +25,7 @@ function startAdminBot(app, webhookUrl) {
         }
         console.log(`🛡️ Admin bot initialized with Webhook: ${url}`);
     } else {
-        const adminBot = new TelegramBot(token, { polling: true });
+        adminBot = new TelegramBot(token, { polling: true });
         globalAdminBot = adminBot;
         console.log('🛡️ Admin bot started on polling mode');
     }
@@ -61,6 +63,14 @@ function startAdminBot(app, webhookUrl) {
 • /broadcast — Starts a "Collection Session". You can send multiple photos, videos, voice notes, and texts to the bot. Click "Finish" and it clones them directly to every single user exactly as you sent them.
 • /broadcasts — Shows your 10 most recent broadcast sessions, their IDs, and whether they have been recalled.
 • /deletebroadcast — Triggers a conversational prompt to recall/undo a sent broadcast for everyone (or a specific user).
+
+*God-Mode Actions:*
+• /msg <telegram_id> <message> — Send a direct DM to a user from the main bot.
+• /giftpremium <telegram_id> — Instantly upgrade a user to Premium.
+• /revokepremium <telegram_id> — Remove a user's Premium status.
+• /block <telegram_id> — Ban a user from using the bot.
+• /unblock <telegram_id> — Unban a user.
+• /backup — Download a complete JSON backup of the users & transactions database.
 
 *Admin & Security Management:*
 • /admins — Shows all currently authorized admins. The Master Admin (you) is listed at the top.
@@ -159,6 +169,113 @@ _Tip: Unauthorized users will not see any replies from this bot (Silent Security
         if (!(await checkAuth(msg))) return;
         const prompt = await adminBot.sendMessage(msg.chat.id, 'Please enter the Telegram ID of the admin you want to remove:\n\nType /cancel to abort.', { parse_mode: 'Markdown' });
         adminStates[msg.from.id] = { action: 'removeadmin', promptMsgId: prompt.message_id };
+    });
+
+    adminBot.onText(/^\/backup$/, async (msg) => {
+        if (!(await checkAuth(msg))) return;
+        const chatId = msg.chat.id;
+        try {
+            await adminBot.sendMessage(chatId, '📦 Generating database backup...');
+            const { getAllUsers } = require('../db/schema');
+            const { getDB } = require('../db/schema');
+            const client = getDB();
+            
+            // Get all data
+            const users = await getAllUsers();
+            const txsRes = await client.execute('SELECT * FROM transactions');
+            
+            const backupData = {
+                timestamp: new Date().toISOString(),
+                users: users,
+                transactions: txsRes.rows
+            };
+            
+            const fs = require('fs');
+            const backupPath = './backup.json';
+            fs.writeFileSync(backupPath, JSON.stringify(backupData, null, 2));
+            
+            await adminBot.sendDocument(chatId, backupPath, { caption: '✅ Database Backup' });
+            
+            // Clean up
+            fs.unlinkSync(backupPath);
+        } catch (e) {
+            console.error('Backup error:', e);
+            await adminBot.sendMessage(chatId, `❌ Failed to generate backup: ${e.message}`);
+        }
+    });
+
+    adminBot.onText(/^\/giftpremium (\d+)$/, async (msg, match) => {
+        if (!(await checkAuth(msg))) return;
+        const targetId = match[1];
+        try {
+            const { getDB } = require('../db/schema');
+            const client = getDB();
+            await client.execute({ sql: 'UPDATE users SET is_premium = 1 WHERE telegram_id = ?', args: [targetId] });
+            await adminBot.sendMessage(msg.chat.id, `✅ User ${targetId} is now Premium.`);
+            
+            const { getBot } = require('./telegram');
+            const mainBot = getBot();
+            if (mainBot) {
+                await mainBot.sendMessage(targetId, '🎉 *Premium Activated!*\n\nAn admin has manually gifted you Premium. You now have unlimited access to Kobowise Premium!', { parse_mode: 'Markdown' }).catch(()=>{});
+            }
+        } catch (e) {
+            await adminBot.sendMessage(msg.chat.id, `❌ Failed: ${e.message}`);
+        }
+    });
+
+    adminBot.onText(/^\/revokepremium (\d+)$/, async (msg, match) => {
+        if (!(await checkAuth(msg))) return;
+        const targetId = match[1];
+        try {
+            const { getDB } = require('../db/schema');
+            const client = getDB();
+            await client.execute({ sql: 'UPDATE users SET is_premium = 0 WHERE telegram_id = ?', args: [targetId] });
+            await adminBot.sendMessage(msg.chat.id, `✅ User ${targetId} is no longer Premium.`);
+        } catch (e) {
+            await adminBot.sendMessage(msg.chat.id, `❌ Failed: ${e.message}`);
+        }
+    });
+
+    adminBot.onText(/^\/block (\d+)$/, async (msg, match) => {
+        if (!(await checkAuth(msg))) return;
+        const targetId = match[1];
+        try {
+            const { blockUser } = require('../db/schema');
+            await blockUser(targetId);
+            await adminBot.sendMessage(msg.chat.id, `🚫 User ${targetId} has been blocked.`);
+        } catch (e) {
+            await adminBot.sendMessage(msg.chat.id, `❌ Failed: ${e.message}`);
+        }
+    });
+
+    adminBot.onText(/^\/unblock (\d+)$/, async (msg, match) => {
+        if (!(await checkAuth(msg))) return;
+        const targetId = match[1];
+        try {
+            const { unblockUser } = require('../db/schema');
+            await unblockUser(targetId);
+            await adminBot.sendMessage(msg.chat.id, `✅ User ${targetId} has been unblocked.`);
+        } catch (e) {
+            await adminBot.sendMessage(msg.chat.id, `❌ Failed: ${e.message}`);
+        }
+    });
+
+    adminBot.onText(/^\/msg (\d+) (.+)$/, async (msg, match) => {
+        if (!(await checkAuth(msg))) return;
+        const targetId = match[1];
+        const textMsg = match[2];
+        try {
+            const { getBot } = require('./telegram');
+            const mainBot = getBot();
+            if (mainBot) {
+                await mainBot.sendMessage(targetId, `💬 *Message from Support:*\n\n${textMsg}`, { parse_mode: 'Markdown' }).catch(()=>{});
+                await adminBot.sendMessage(msg.chat.id, `✅ Message sent to ${targetId}.`);
+            } else {
+                await adminBot.sendMessage(msg.chat.id, `❌ Main bot is not running.`);
+            }
+        } catch (e) {
+            await adminBot.sendMessage(msg.chat.id, `❌ Failed to send message: ${e.message}`);
+        }
     });
 
     adminBot.onText(/^\/broadcast$/, async (msg) => {
