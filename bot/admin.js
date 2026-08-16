@@ -16,7 +16,7 @@ function startAdminBot(app, webhookUrl) {
         adminBot = new TelegramBot(token);
         globalAdminBot = adminBot;
         const url = `${webhookUrl}/api/bot/admin`;
-        adminBot.setWebHook(url);
+        adminBot.setWebHook(url, { drop_pending_updates: true }).catch(err => console.error('Admin Bot Webhook Error:', err.message));
         if (app) {
             app.post('/api/bot/admin', (req, res) => {
                 adminBot.processUpdate(req.body);

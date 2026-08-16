@@ -14,7 +14,7 @@ function initBot(app, webhookUrl) {
     if (webhookUrl) {
         bot = new TelegramBot(token);
         const url = `${webhookUrl}/api/bot/main`;
-        bot.setWebHook(url);
+        bot.setWebHook(url, { drop_pending_updates: true }).catch(err => console.error('Main Bot Webhook Error:', err.message));
         if (app) {
             app.post('/api/bot/main', (req, res) => {
                 bot.processUpdate(req.body);
