@@ -107,6 +107,18 @@
             font-size: 0.95rem;
         }
         
+        .price {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent);
+            font-family: var(--font-display);
+        }
+        
+        .price span {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+        }
+        
         .bank-value {
             font-family: var(--font-mono);
             font-weight: 500;
@@ -130,7 +142,7 @@
             display: flex;
             gap: var(--space-md);
             margin-bottom: var(--space-md);
-            align-items: flex-start;
+            align-items: center;
         }
         
         .step-number {
@@ -146,12 +158,11 @@
             font-size: 0.85rem;
             font-weight: 600;
             flex-shrink: 0;
-            margin-top: 2px;
         }
         
         .step-content {
             color: var(--text-primary);
-            line-height: 1.6;
+            line-height: 1.5;
         }
         
         .step-content code {
