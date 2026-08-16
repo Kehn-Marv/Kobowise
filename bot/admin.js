@@ -65,11 +65,11 @@ function startAdminBot(app, webhookUrl) {
 • /deletebroadcast — Triggers a conversational prompt to recall/undo a sent broadcast for everyone (or a specific user).
 
 *God-Mode Actions:*
-• /msg <telegram_id> <message> — Send a direct DM to a user from the main bot.
-• /giftpremium <telegram_id> — Instantly upgrade a user to Premium.
-• /revokepremium <telegram_id> — Remove a user's Premium status.
-• /block <telegram_id> — Ban a user from using the bot.
-• /unblock <telegram_id> — Unban a user.
+• /msg [Telegram ID] [message] — Send a direct DM to a user from the main bot.
+• /giftpremium [Telegram ID] — Instantly upgrade a user to Premium.
+• /revokepremium [Telegram ID] — Remove a user's Premium status.
+• /block [Telegram ID] — Ban a user from using the bot.
+• /unblock [Telegram ID] — Unban a user.
 • /backup — Download a complete JSON backup of the users & transactions database.
 
 *Admin & Security Management:*
@@ -125,7 +125,7 @@ _Tip: Unauthorized users will not see any replies from this bot (Silent Security
                 const type = u.business_type || 'Unknown';
                 const loc = u.location || 'Unknown';
                 // Avoid Markdown breaking on usernames with underscores by using code blocks
-                text += `${i+1}. ${u.business_name} (${type})\n   📍 ${loc} | \`${u.telegram_username ? '@'+u.telegram_username : 'No username'}\`\n`;
+                text += `${i+1}. ${u.business_name} (${type})\n   📍 ${loc} | \`${u.telegram_username ? '@'+u.telegram_username : 'No username'}\` | ID: \`${u.telegram_id}\`\n`;
             });
             await adminBot.sendMessage(chatId, text, { parse_mode: 'Markdown' });
         } catch (e) {
