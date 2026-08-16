@@ -46,7 +46,7 @@ function startAdminBot(app, webhookUrl) {
     adminBot.onText(/^\/start$/, async (msg) => {
         if (!(await checkAuth(msg))) return;
         await adminBot.sendMessage(msg.chat.id, 
-            `🛡️ *Kobowise Admin Panel*\n\nAvailable commands:\n• /stats - View detailed metrics and usage\n• /users - List registered users\n• /broadcast - Send a message to all users\n• /help - View all available commands\n\n👮 *Access Control:*\n• /admins - List authorized admins\n• /addadmin - Grant access\n• /removeadmin - Revoke access`,
+            `🛡️ *Kobowise Admin Panel*\n\nWelcome back, Admin.\n\nTo see everything you can do, send /help to view the full command menu.`,
             { parse_mode: 'Markdown' }
         );
     });
