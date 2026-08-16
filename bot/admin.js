@@ -359,6 +359,41 @@ _Tip: Unauthorized users will not see any replies from this bot (Silent Security
             await updateAdminSettings(query.from.id, newPref);
             await sendSettingsMenu(msg.chat.id, query.from.id, msg.message_id);
             await adminBot.answerCallbackQuery(query.id, { text: 'Settings updated!' });
+        } else if (data.startsWith('approve_premium_')) {
+            const userId = parseInt(data.split('_')[2]);
+            const { getDB } = require('../db/schema');
+            const client = getDB();
+            await client.execute({ sql: 'UPDATE users SET is_premium = 1 WHERE id = ?', args: [userId] });
+            
+            // Send success message to user
+            const { getBot } = require('./telegram');
+            const mainBot = getBot();
+            if (mainBot) {
+                const userRes = await client.execute({ sql: 'SELECT telegram_id FROM users WHERE id = ?', args: [userId] });
+                if (userRes.rows[0]) {
+                    await mainBot.sendMessage(userRes.rows[0].telegram_id, '🎉 *Premium Activated!*\n\nYour payment has been confirmed. You now have unlimited access to Kobowise Premium!', { parse_mode: 'Markdown' }).catch(()=>{});
+                }
+            }
+            
+            await adminBot.editMessageCaption(msg.caption + '\n\n✅ *Status: APPROVED*', { chat_id: msg.chat.id, message_id: msg.message_id, parse_mode: 'Markdown' }).catch(()=>{});
+            await adminBot.answerCallbackQuery(query.id, { text: 'User upgraded to Premium!' });
+        } else if (data.startsWith('reject_premium_')) {
+            const userId = parseInt(data.split('_')[2]);
+            const { getDB } = require('../db/schema');
+            const client = getDB();
+            
+            // Send rejection message to user
+            const { getBot } = require('./telegram');
+            const mainBot = getBot();
+            if (mainBot) {
+                const userRes = await client.execute({ sql: 'SELECT telegram_id FROM users WHERE id = ?', args: [userId] });
+                if (userRes.rows[0]) {
+                    await mainBot.sendMessage(userRes.rows[0].telegram_id, '❌ *Payment Verification Failed*\n\nWe could not verify your Premium payment receipt. If you believe this is a mistake, please try uploading a clearer image of the receipt.', { parse_mode: 'Markdown' }).catch(()=>{});
+                }
+            }
+
+            await adminBot.editMessageCaption(msg.caption + '\n\n❌ *Status: REJECTED*', { chat_id: msg.chat.id, message_id: msg.message_id, parse_mode: 'Markdown' }).catch(()=>{});
+            await adminBot.answerCallbackQuery(query.id, { text: 'Receipt rejected.' });
         } else if (data.startsWith('delete_broadcast_')) {
             const bId = parseInt(data.split('_')[2]);
             await adminBot.answerCallbackQuery(query.id, { text: 'Starting deletion...' });

@@ -147,8 +147,15 @@ async function handlePremium(msg) {
         }
 
         await safeSend(chatId,
-            `🌟 *KOBOWISE PREMIUM*\n\n━━━━━━━━━━━━━━━━━━\n\n🆓 *Free Plan* (Current)\n• ${FREE_DAILY_LIMIT} messages per day\n• Weekly health reports (Sundays)\n• Basic expense categorization\n\n━━━━━━━━━━━━━━━━━━\n\n🌟 *Premium Plan* — ₦1,500/month\n• ✅ *Unlimited* messages per day\n• ✅ Daily mini-reports + weekly deep reports\n• ✅ Advanced AI insights & prescriptions\n• ✅ Expense trend analysis\n• ✅ Best/worst day identification\n• ✅ Full transaction history\n• ✅ Custom expense categories\n• ✅ Priority support\n\n━━━━━━━━━━━━━━━━━━\n\n💰 *How to upgrade:*\nContact support or pay via the link below.\nOnce confirmed, your premium activates instantly!\n\n_Every kobo invested in understanding your business pays back 100x._`,
-            { parse_mode: 'Markdown' }
+            `🌟 *KOBOWISE PREMIUM*\n\n━━━━━━━━━━━━━━━━━━\n\n🆓 *Free Plan* (Current)\n• ${FREE_DAILY_LIMIT} messages per day\n• Weekly health reports (Sundays)\n• Basic expense categorization\n\n━━━━━━━━━━━━━━━━━━\n\n🌟 *Premium Plan* — ₦1,500/month\n• ✅ *Unlimited* messages per day\n• ✅ Daily mini-reports + weekly deep reports\n• ✅ Advanced AI insights & prescriptions\n• ✅ Expense trend analysis\n• ✅ Best/worst day identification\n• ✅ Full transaction history\n• ✅ Custom expense categories\n• ✅ Priority support\n\n━━━━━━━━━━━━━━━━━━\n\n💰 *How to Upgrade*\nPlease transfer exactly *₦1,500* to the official account below:\n\nBank: *Opay*\nAcc Name: *Egemonye Marvellous Kenechukwu*\nAcc No: \`9068539301\`\n\n⚠️ *ANTI-SCAM DISCLAIMER*\nKobowise will NEVER ask you to pay into any other account. The account details listed above are the ONLY verified and official payment channels for Kobowise Premium. Do not send money to any other account.\n\n_Once you have made the transfer, click the button below to submit your receipt!_`,
+            { 
+                parse_mode: 'Markdown',
+                reply_markup: {
+                    inline_keyboard: [
+                        [{ text: '📤 I have made payment (Submit Receipt)', callback_data: 'premium_payment_start' }]
+                    ]
+                }
+            }
         );
     } catch (err) {
         console.error('Premium error:', err);
@@ -480,6 +487,10 @@ async function handleCallbackQuery(query) {
             await updateUser(telegramId, { onboarding_step: 'ask_name' });
             await bot.answerCallbackQuery(query.id, { text: '✏️ Send your new business name!' });
             await safeSend(chatId, '✏️ What would you like to rename your business to?\n\n_Just type the new name and send it._', { parse_mode: 'Markdown' });
+        } else if (data === 'premium_payment_start') {
+            await updateUser(telegramId, { onboarding_step: 'awaiting_receipt' });
+            await bot.answerCallbackQuery(query.id, { text: '📤 Please upload your receipt photo now.' });
+            await safeSend(chatId, '📸 *Upload Payment Receipt*\n\nPlease upload a photo or screenshot of your successful transfer now.\n\nOur team will verify it and activate your Premium instantly!', { parse_mode: 'Markdown' });
         }
     } catch (err) {
         console.error('Callback query error:', err);
@@ -601,6 +612,37 @@ async function handlePhoto(msg) {
 
     try {
         const user = await findUserByTelegramId(telegramId);
+        
+        if (user && user.onboarding_step === 'awaiting_receipt') {
+            // Forward photo to Admin Bot
+            await safeSend(chatId, '✅ *Receipt Submitted!*\n\nOur team is verifying your payment. Your premium will be activated shortly.', { parse_mode: 'Markdown' });
+            
+            // Revert state to complete so they can continue using the bot
+            await updateUser(telegramId, { onboarding_step: 'complete' });
+
+            try {
+                const { adminBot } = require('./admin');
+                const adminId = process.env.MASTER_ADMIN_ID; 
+                const photo = msg.photo[msg.photo.length - 1]; 
+                
+                await adminBot.sendPhoto(adminId, photo.file_id, {
+                    caption: `💳 *Premium Payment Verification*\n\nUser: ${user.business_name} (${user.telegram_username ? '@'+user.telegram_username : 'No username'})\nTelegram ID: \`${user.telegram_id}\`\n\nPlease verify the receipt and approve.`,
+                    parse_mode: 'Markdown',
+                    reply_markup: {
+                        inline_keyboard: [
+                            [
+                                { text: '✅ Approve Premium', callback_data: `approve_premium_${user.id}` },
+                                { text: '❌ Reject', callback_data: `reject_premium_${user.id}` }
+                            ]
+                        ]
+                    }
+                });
+            } catch (e) {
+                console.error("Failed to forward receipt to admin:", e);
+            }
+            return;
+        }
+
         if (!user || user.onboarding_step !== 'complete') {
             await safeSend(chatId, 'Please complete setup first! Send /start');
             return;
