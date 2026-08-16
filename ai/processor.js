@@ -1,18 +1,126 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { OpenAI, toFile } = require('openai');
 
-let genAI = null;
-let model = null;
+function getGeminiKeys() {
+    return Object.keys(process.env)
+        .filter(k => k.startsWith('GEMINI_API_KEY'))
+        .map(k => process.env[k])
+        .filter(k => k && k !== 'your_gemini_api_key_here');
+}
 
-function getModel() {
-    if (model) return model;
+function getGroqKeys() {
+    return Object.keys(process.env)
+        .filter(k => k.startsWith('GROQ_API_KEY'))
+        .map(k => process.env[k])
+        .filter(k => k);
+}
 
-    if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'your_gemini_api_key_here') {
-        throw new Error('GEMINI_API_KEY not configured. Get a free key at https://aistudio.google.com/apikey');
+async function executeGemini(key, taskType, args) {
+    const genAI = new GoogleGenerativeAI(key);
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    
+    let result, response;
+    const fullPrompt = `${args.systemPrompt}\n\n${args.prompt}`;
+    
+    if (taskType === 'text' || taskType === 'report') {
+        result = await model.generateContent(fullPrompt);
+    } else if (taskType === 'image') {
+        const imagePart = { inlineData: { data: args.imageBuffer.toString('base64'), mimeType: args.mimeType || 'image/jpeg' } };
+        result = await model.generateContent([fullPrompt, imagePart]);
+    } else if (taskType === 'audio') {
+        const audioPart = { inlineData: { data: args.audioBuffer.toString('base64'), mimeType: args.mimeType || 'audio/ogg' } };
+        result = await model.generateContent([fullPrompt, audioPart]);
+    }
+    
+    response = result.response.text();
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('No JSON found in Gemini output');
+    return JSON.parse(jsonMatch[0]);
+}
+
+async function executeGroq(key, taskType, args) {
+    const groq = new OpenAI({ apiKey: key, baseURL: 'https://api.groq.com/openai/v1' });
+    
+    if (taskType === 'text' || taskType === 'report' || taskType === 'image') {
+        let content;
+        let model = 'llama-3.3-70b-versatile'; // Fallback text model
+        
+        if (taskType === 'image') {
+            model = 'llama-3.2-90b-vision-preview';
+            content = [
+                { type: 'text', text: args.prompt },
+                { type: 'image_url', image_url: { url: `data:${args.mimeType || 'image/jpeg'};base64,${args.imageBuffer.toString('base64')}` } }
+            ];
+        } else {
+            content = args.prompt;
+        }
+
+        const response = await groq.chat.completions.create({
+            model: model,
+            messages: [
+                { role: 'system', content: args.systemPrompt },
+                { role: 'user', content: content }
+            ],
+            response_format: { type: 'json_object' },
+            temperature: 0.1
+        });
+        
+        const text = response.choices[0].message.content;
+        return JSON.parse(text);
+    } else if (taskType === 'audio') {
+        // Groq audio uses Whisper to transcribe, then Llama to extract
+        const file = await toFile(args.audioBuffer, 'audio.ogg', { type: args.mimeType || 'audio/ogg' });
+        const transcription = await groq.audio.transcriptions.create({
+            file: file,
+            model: 'whisper-large-v3'
+        });
+        
+        const transcript = transcription.text;
+        const textPrompt = args.prompt + '\n\nTranscript:\n' + transcript;
+        
+        const response = await groq.chat.completions.create({
+            model: 'llama-3.3-70b-versatile',
+            messages: [
+                { role: 'system', content: args.systemPrompt },
+                { role: 'user', content: textPrompt }
+            ],
+            response_format: { type: 'json_object' },
+            temperature: 0.1
+        });
+        
+        const text = response.choices[0].message.content;
+        return JSON.parse(text);
+    }
+}
+
+async function executeWithFailover(taskType, args) {
+    const allKeys = [
+        ...getGeminiKeys().map(k => ({ provider: 'gemini', key: k })),
+        ...getGroqKeys().map(k => ({ provider: 'groq', key: k }))
+    ];
+
+    if (allKeys.length === 0) {
+        throw new Error('No valid API keys configured for Gemini or Groq.');
     }
 
-    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-    return model;
+    let lastError = null;
+
+    for (const cred of allKeys) {
+        try {
+            console.log(`[AI] Attempting ${taskType} using ${cred.provider}...`);
+            if (cred.provider === 'gemini') {
+                return await executeGemini(cred.key, taskType, args);
+            } else if (cred.provider === 'groq') {
+                return await executeGroq(cred.key, taskType, args);
+            }
+        } catch (err) {
+            console.error(`[AI] ${cred.provider} key failed:`, err.message);
+            lastError = err;
+            // Continue to the next key automatically
+        }
+    }
+
+    throw new Error(`All AI providers failed. Last error: ${lastError.message}`);
 }
 
 // ============ SYSTEM PROMPT ============
@@ -58,122 +166,60 @@ If the message genuinely seems like it should contain financial data but you can
 
 // ============ PROCESS TEXT INPUT ============
 async function processTextInput(text, businessType, recentTransactionsContext = '') {
-    const ai = getModel();
-
-    const prompt = `${EXTRACTION_PROMPT}
-
-Business type: ${businessType || 'General'}
-
-Recent Transactions (for answering questions):
-${recentTransactionsContext || 'No recent transactions.'}
-
-User message:
-"${text}"`;
+    const prompt = `Business type: ${businessType || 'General'}\n\nRecent Transactions (for answering questions):\n${recentTransactionsContext || 'No recent transactions.'}\n\nUser message:\n"${text}"`;
 
     try {
-        const result = await ai.generateContent(prompt);
-        const response = result.response.text();
-
-        // Extract JSON from response (handle markdown code blocks)
-        const jsonMatch = response.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-            return { transactions: [], summary: 'Sorry, I had trouble understanding that. Could you try again?' };
-        }
-
-        return JSON.parse(jsonMatch[0]);
+        return await executeWithFailover('text', { systemPrompt: EXTRACTION_PROMPT, prompt });
     } catch (err) {
-        console.error('AI processing error:', err.message);
-        return { transactions: [], summary: 'Something went wrong processing your message. Please try again.' };
+        return { transactions: [], summary: 'Something went wrong processing your message. Please try again later.' };
     }
 }
 
 // ============ PROCESS IMAGE (OCR) ============
 async function processImage(imageBuffer, mimeType, businessType, recentTransactionsContext = '') {
-    const ai = getModel();
-
-    const prompt = `${EXTRACTION_PROMPT}
-
-Business type: ${businessType || 'General'}
-
-Recent Transactions (for answering questions):
-${recentTransactionsContext || 'No recent transactions.'}
-
-The user sent a photo of their sales notebook, receipt, or financial record. 
-Extract ALL transaction data you can see in the image.
-If the handwriting is unclear, do your best and note uncertainty in the description.`;
+    const prompt = `Business type: ${businessType || 'General'}\n\nRecent Transactions (for answering questions):\n${recentTransactionsContext || 'No recent transactions.'}\n\nThe user sent a photo of their sales notebook, receipt, or financial record. \nExtract ALL transaction data you can see in the image.\nIf the handwriting is unclear, do your best and note uncertainty in the description.`;
 
     try {
-        const imagePart = {
-            inlineData: {
-                data: imageBuffer.toString('base64'),
-                mimeType: mimeType || 'image/jpeg'
-            }
-        };
-
-        const result = await ai.generateContent([prompt, imagePart]);
-        const response = result.response.text();
-
-        const jsonMatch = response.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-            return { transactions: [], summary: 'I couldn\'t read the image clearly. Try taking a clearer photo with good lighting.' };
-        }
-
-        return JSON.parse(jsonMatch[0]);
+        return await executeWithFailover('image', { systemPrompt: EXTRACTION_PROMPT, prompt, imageBuffer, mimeType });
     } catch (err) {
-        console.error('Image processing error:', err.message);
-        return { transactions: [], summary: 'Something went wrong reading your photo. Please try again.' };
+        return { transactions: [], summary: 'Something went wrong reading your photo. Please try again later.' };
     }
 }
 
 // ============ PROCESS VOICE NOTE ============
 async function processVoiceNote(audioBuffer, mimeType, businessType, recentTransactionsContext = '') {
-    const ai = getModel();
-
-    const prompt = `${EXTRACTION_PROMPT}
-
-Business type: ${businessType || 'General'}
-
-Recent Transactions (for answering questions):
-${recentTransactionsContext || 'No recent transactions.'}
-
-The user sent a voice note describing their business day. 
-Listen carefully — they may speak in English, Pidgin, or a mix.
-Extract ALL financial transactions mentioned.`;
+    const prompt = `Business type: ${businessType || 'General'}\n\nRecent Transactions (for answering questions):\n${recentTransactionsContext || 'No recent transactions.'}\n\nThe user sent a voice note describing their business day. \nListen carefully — they may speak in English, Pidgin, or a mix.\nExtract ALL financial transactions mentioned.`;
 
     try {
-        const audioPart = {
-            inlineData: {
-                data: audioBuffer.toString('base64'),
-                mimeType: mimeType || 'audio/ogg'
-            }
-        };
-
-        const result = await ai.generateContent([prompt, audioPart]);
-        const response = result.response.text();
-
-        const jsonMatch = response.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-            return { transactions: [], summary: 'I couldn\'t understand the voice note clearly. Try speaking a bit clearer or typing it out.' };
-        }
-
-        return JSON.parse(jsonMatch[0]);
+        return await executeWithFailover('audio', { systemPrompt: EXTRACTION_PROMPT, prompt, audioBuffer, mimeType });
     } catch (err) {
-        console.error('Voice processing error:', err.message);
-        return { transactions: [], summary: 'Something went wrong processing your voice note. Please try again.' };
+        return { transactions: [], summary: 'Something went wrong processing your voice note. Please try again later.' };
     }
 }
 
 // ============ GENERATE HEALTH REPORT ============
-async function generateHealthReport(summary, businessName, businessType, previousReport) {
-    const ai = getModel();
-
-    const prompt = `You are Kobowise, an AI Business Doctor for Nigerian small businesses.
+const HEALTH_REPORT_PROMPT = `You are Kobowise, an AI Business Doctor for Nigerian small businesses.
 Generate a "Business Health Report" for this week.
 
 STYLE: Write like a caring doctor, not an accountant. Be specific with naira amounts.
 Use emojis. Give actionable advice. Speak plainly — no jargon.
 
-BUSINESS: ${businessName} (${businessType})
+RESPOND IN THIS JSON FORMAT:
+{
+  "telegram_message": "The full report formatted for Telegram (use text formatting, emojis, line breaks with \\n)",
+  "notes": [
+    {
+      "type": "warning" or "success" or "tip",
+      "badge": "emoji + short label",
+      "text": "The observation",
+      "prescription": "optional specific fix with naira amounts"
+    }
+  ],
+  "headline": "One-line summary of the week"
+}`;
+
+async function generateHealthReport(summary, businessName, businessType, previousReport) {
+    const prompt = `BUSINESS: ${businessName} (${businessType})
 
 THIS WEEK'S DATA:
 - Total Revenue: ₦${summary.revenue.toLocaleString()}
@@ -196,32 +242,10 @@ ${summary.categories
 DAILY BREAKDOWN:
 ${summary.daily.map(d => `- ${d.date}: ${d.type} ₦${Number(d.total).toLocaleString()}`).join('\n')}
 
-${previousReport ? `LAST WEEK: Revenue ₦${previousReport.revenue?.toLocaleString()}, Expenses ₦${previousReport.expenses?.toLocaleString()}` : 'This is the first report.'}
-
-RESPOND IN THIS JSON FORMAT:
-{
-  "telegram_message": "The full report formatted for Telegram (use text formatting, emojis, line breaks with \\n)",
-  "notes": [
-    {
-      "type": "warning" or "success" or "tip",
-      "badge": "emoji + short label",
-      "text": "The observation",
-      "prescription": "optional specific fix with naira amounts"
-    }
-  ],
-  "headline": "One-line summary of the week"
-}`;
+${previousReport ? `LAST WEEK: Revenue ₦${previousReport.revenue?.toLocaleString()}, Expenses ₦${previousReport.expenses?.toLocaleString()}` : 'This is the first report.'}`;
 
     try {
-        const result = await ai.generateContent(prompt);
-        const response = result.response.text();
-
-        const jsonMatch = response.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-            return generateFallbackReport(summary, businessName);
-        }
-
-        return JSON.parse(jsonMatch[0]);
+        return await executeWithFailover('report', { systemPrompt: HEALTH_REPORT_PROMPT, prompt });
     } catch (err) {
         console.error('Report generation error:', err.message);
         return generateFallbackReport(summary, businessName);
