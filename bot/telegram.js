@@ -1074,6 +1074,70 @@ async function processDocumentFile(fileId, mimeType, fileName, chatId, telegramI
     }
 }
 
+// ============ DOCUMENT HANDLER ============
+async function handleDocument(msg) {
+    const chatId = msg.chat.id;
+    const telegramId = String(msg.from.id);
+
+    try {
+        const user = await findUserByTelegramId(telegramId);
+        if (!user || user.onboarding_step !== 'complete') {
+            await safeSend(chatId, 'Please complete setup first! Send /start');
+            return;
+        }
+
+        const rateResult = await enforceRateLimit(user);
+        if (rateResult && typeof rateResult === 'string') {
+            await safeSend(chatId, rateResult, { parse_mode: 'Markdown' });
+            return;
+        }
+
+        const doc = msg.document;
+        const fileName = (doc.file_name || '').toLowerCase();
+        const mimeType = doc.mime_type || '';
+
+        const { isSupportedDocFormat } = require('../utils/doc-parser');
+        if (!isSupportedDocFormat(mimeType, fileName) && !fileName.endsWith('.pdf') && !mimeType.includes('pdf')) {
+            await safeSend(chatId, '📄 I can process PDF, DOCX, CSV, and TXT files. Please send a supported format.\n\nFor photos of receipts, just send them as a photo! 📸');
+            return;
+        }
+
+        // Handle grouped documents (batching) - process sequentially
+        const groupId = msg.media_group_id;
+        if (groupId) {
+            if (!mediaGroups.has(groupId)) {
+                mediaGroups.set(groupId, { items: [], timer: null, chatId, telegramId });
+                await safeSend(chatId, '📥 Receiving multiple documents... This might take several seconds.');
+            }
+            
+            const group = mediaGroups.get(groupId);
+            if (group.items.length >= 10) return; // Drop extras to prevent abuse
+            
+            group.items.push(msg);
+            clearTimeout(group.timer);
+            
+            group.timer = setTimeout(async () => {
+                const grp = mediaGroups.get(groupId);
+                if (!grp) return;
+                mediaGroups.delete(groupId);
+                
+                await safeSend(chatId, `📄 Processing ${grp.items.length} document(s) sequentially...`);
+                for (const item of grp.items) {
+                    await processDocumentFile(item.document.file_id, item.document.mime_type || '', item.document.file_name || '', chatId, telegramId, user);
+                }
+            }, 3000);
+            return;
+        }
+
+        // Single document
+        await processDocumentFile(doc.file_id, mimeType, fileName, chatId, telegramId, user);
+
+    } catch (err) {
+        console.error('Document handling error:', err);
+        await safeSend(chatId, '❌ Something went wrong receiving your document.');
+    }
+}
+
 // ============ UNIFIED AI RESPONSE HANDLER ============
 async function handleAIResponse(chatId, telegramId, user, result, source, usageWarning = '') {
     const action = result.action || 'log';
