@@ -20,7 +20,7 @@ const COLORS = {
 
 // ============ HELPERS ============
 function formatNaira(amount) {
-    return '₦' + Number(amount).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return 'NGN ' + Number(amount).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function groupByCategory(transactions, type) {
@@ -110,16 +110,16 @@ async function generateProfessionalPDF(user, transactions, options = {}) {
 
     const tableArray = {
         headers: [
-            { label: 'Date', width: 75, headerColor: '#1B5E20', headerOpacity: 1 },
-            { label: 'Type', width: 55, headerColor: '#1B5E20', headerOpacity: 1 },
-            { label: 'Category', width: 95, headerColor: '#1B5E20', headerOpacity: 1 },
-            { label: 'Description', width: 160, headerColor: '#1B5E20', headerOpacity: 1 },
-            { label: 'Amount (₦)', width: 85, headerColor: '#1B5E20', headerOpacity: 1, renderer: null },
+            { label: 'Date', width: 65, headerColor: '#1B5E20', headerOpacity: 1 },
+            { label: 'Type', width: 45, headerColor: '#1B5E20', headerOpacity: 1 },
+            { label: 'Category', width: 85, headerColor: '#1B5E20', headerOpacity: 1 },
+            { label: 'Description', width: 175, headerColor: '#1B5E20', headerOpacity: 1 },
+            { label: 'Amount (NGN)', width: 75, headerColor: '#1B5E20', headerOpacity: 1, renderer: null },
             { label: 'Method', width: 55, headerColor: '#1B5E20', headerOpacity: 1 },
         ],
         rows: transactions.map(t => [
             t.date || '',
-            t.type === 'income' ? '💰 Income' : '💸 Expense',
+            t.type === 'income' ? 'Income' : 'Expense',
             t.category || '',
             t.description || '',
             Number(t.amount).toLocaleString('en-NG', { minimumFractionDigits: 2 }),
@@ -135,14 +135,14 @@ async function generateProfessionalPDF(user, transactions, options = {}) {
     tableArray.rows.push(['', '', '', 'PROFIT MARGIN', `${margin}%`, '']);
 
     await doc.table(tableArray, {
-        width: 525,
+        width: 500,
         prepareHeader: () => doc.font('Helvetica-Bold').fontSize(8).fill('#FFFFFF'),
         prepareRow: (row, indexColumn, indexRow) => {
             doc.font('Helvetica').fontSize(7.5).fill('#212121');
         }
     });
 
-    // ---- FOOTER ----
+    // ---- FOOTER ----TER ----
     const pages = doc.bufferedPageRange();
     for (let i = 0; i < pages.count; i++) {
         doc.switchToPage(i);

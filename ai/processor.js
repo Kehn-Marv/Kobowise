@@ -155,10 +155,10 @@ RULES FOR EDIT/DELETE:
 3. For edits/deletes, fill in the "edit_target" field with enough detail to find the transaction.
 
 RULES FOR CONVERSATIONAL MESSAGES:
-1. If the user sends a confirmation like "correct", "all correct", "yes", "ok", "perfect", "nice", "good", "right", "that's right", respond warmly — e.g., "Great, glad I got everything right! 👍 Keep sending your transactions whenever you're ready."
-2. If the user sends a greeting like "hi", "hello", "hey", "good morning", respond naturally — e.g., "Hey! 👋 Ready to log today's transactions. Just send me your sales and expenses!"
-3. If the user says "thank you", "thanks", "appreciate it", respond warmly — e.g., "You're welcome! 😊 I'm always here to help."
-4. If the user sends something unrelated to business/finances (random chat), respond briefly and steer back — e.g., "Haha, noted! 😄 But let's keep track of the money — tell me about today's sales or expenses!"
+1. If the user sends a confirmation like "correct", "all correct", "yes", "ok", "perfect", "nice", "good", "right", "that's right", respond warmly — e.g., "Great, glad I got everything right! � Keep sending your transactions whenever you're ready."
+2. If the user sends a greeting like "hi", "hello", "hey", "good morning", respond naturally — e.g., "Hey!  Ready to log today's transactions. Just send me your sales and expenses!"
+3. If the user says "thank you", "thanks", "appreciate it", respond warmly — e.g., "You're welcome! � I'm always here to help."
+4. If the user sends something unrelated to business/finances (random chat), respond briefly and steer back — e.g., "Haha, noted! � But let's keep track of the money — tell me about today's sales or expenses!"
 5. NEVER respond with a generic "I couldn't find any transaction data" to conversational messages. Always be natural and context-aware.
 
 RESPOND ONLY WITH VALID JSON in this exact format:
@@ -274,7 +274,7 @@ If NO DATE is visible on the receipt/image, set clarification_needed to ask the 
 Look for payment method clues: "TRANSFER", "POS", "CASH" etc.`;
 
     try {
-        const parts = [prompt];
+        const parts = [EXTRACTION_PROMPT, prompt];
         
         for (const img of imagesArray) {
             parts.push({
@@ -312,6 +312,7 @@ Note: Since this is an image, we could not automatically redact sensitive info. 
 
     try {
         const parts = [
+            EXTRACTION_PROMPT,
             prompt,
             {
                 inlineData: {
@@ -441,7 +442,7 @@ ${previousReport ? `LAST WEEK: Revenue ₦${previousReport.revenue?.toLocaleStri
 
 // ============ FALLBACK REPORT ============
 function generateFallbackReport(summary, businessName) {
-    const msg = `📋 ${businessName.toUpperCase()} — Weekly Health Report\n━━━━━━━━━━━━━━━━━━━━━━\n\n🏥 DIAGNOSIS\n\n💰 Revenue: ₦${summary.revenue.toLocaleString()}\n💸 Expenses: ₦${summary.expenses.toLocaleString()}\n📊 Profit: ₦${summary.profit.toLocaleString()} (${summary.margin}% margin)\n\n${summary.profit > 0 ? '✅ You\'re in profit this week!' : '⚠️ You spent more than you earned this week.'}\n\n━━━━━━━━━━━━━━━━━━━━━━\nReply "more" for detailed breakdown`;
+    const msg = ` ${businessName.toUpperCase()} — Weekly Health Report\n━━━━━━━━━━━━━━━━━━━━━━\n\n� DIAGNOSIS\n\n Revenue: ₦${summary.revenue.toLocaleString()}\n� Expenses: ₦${summary.expenses.toLocaleString()}\n Profit: ₦${summary.profit.toLocaleString()} (${summary.margin}% margin)\n\n${summary.profit > 0 ? '✅ You\'re in profit this week!' : '⚠ You spent more than you earned this week.'}\n\n━━━━━━━━━━━━━━━━━━━━━━\nReply "more" for detailed breakdown`;
 
     return {
         telegram_message: msg,
