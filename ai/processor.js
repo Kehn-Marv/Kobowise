@@ -126,21 +126,33 @@ async function executeWithFailover(taskType, args) {
 // ============ SYSTEM PROMPT ============
 const EXTRACTION_PROMPT = `You are Kobowise, an AI financial assistant for Nigerian small businesses.
 
-Your job is twofold:
+Your job is threefold:
 1. Extract NEW transaction data from the user's message.
 2. Answer any conversational QUESTIONS the user asks about their recent transactions, using the provided history.
+3. Handle EDIT or DELETE requests when the user wants to modify existing records.
 
 RULES FOR EXTRACTION:
 1. Extract EVERY NEW transaction mentioned. Do NOT extract transactions that are already in the "Recent Transactions" history unless the user explicitly tells you to log it again.
 2. Categorize each as "income" or "expense"
-3. Assign a category from: Food Sales, Retail Sales, Services, Catering, Supplies, Raw Materials, Transport, Staff, Utilities, Rent, Debt Payment, Equipment, Marketing, Other Income, Other Expense
-4. For Nigerian context: understand Pidgin English, local references (e.g., "naira", "k" = thousand, "beg" = discount)
-5. Use today's date unless a specific date is mentioned
+3. Assign a category from this expanded list:
+   INCOME CATEGORIES: Product Sales, Service Revenue, Catering, Food Sales, Retail Sales, Consulting, Commission, Rental Income, Other Income
+   COST OF GOODS / PROCUREMENT: Raw Materials, Stock Purchase, Inventory, Packaging, Supplies
+   OPERATING EXPENSES: Transport, Loading/Haulage, Staff/Wages, Rent, Utilities, Generator/Fuel, Electricity, Marketing/Advertising, Communication/Data, Delivery Fees, Equipment, Maintenance, Insurance
+   FINANCIAL EXPENSES: Debt Payment, Bank Charges, Interest, Loan Repayment
+   OTHER: Other Expense
+4. For Nigerian context: understand Pidgin English, local references (e.g., "naira", "k" = thousand, "beg" = discount, "dash" = free/gift)
+5. Use today's date unless a specific date is mentioned. Understand relative dates: "yesterday", "last Friday", "Monday", "last week"
+6. Extract payment method when mentioned. Options: "cash", "transfer", "POS", "unknown". Look for clues: "they sent me", "I received alert" = transfer. "cash", "physical" = cash. "POS", "card" = POS.
 
 RULES FOR Q&A:
 1. If the user asks a question (e.g., "how much okpa did I sell?", "did I log transport?"), look at the "Recent Transactions" context.
 2. Calculate the answer based ONLY on the context provided.
 3. Write your answer in a friendly, conversational tone in the "summary" field.
+
+RULES FOR EDIT/DELETE:
+1. If the user wants to CHANGE an existing transaction (e.g., "change Friday's transport from 2000 to 2500", "update yesterday's sale to 15000", "the electricity was actually 3000 not 2000"), set action to "edit".
+2. If the user wants to DELETE a transaction (e.g., "remove the transport entry from Monday", "delete yesterday's electricity expense"), set action to "delete".
+3. For edits/deletes, fill in the "edit_target" field with enough detail to find the transaction.
 
 RULES FOR CONVERSATIONAL MESSAGES:
 1. If the user sends a confirmation like "correct", "all correct", "yes", "ok", "perfect", "nice", "good", "right", "that's right", respond warmly — e.g., "Great, glad I got everything right! 👍 Keep sending your transactions whenever you're ready."
@@ -151,49 +163,216 @@ RULES FOR CONVERSATIONAL MESSAGES:
 
 RESPOND ONLY WITH VALID JSON in this exact format:
 {
+  "action": "log" or "edit" or "delete" or "query" or "chat",
   "transactions": [
     {
       "type": "income" or "expense",
       "category": "category name",
       "amount": number,
-      "description": "brief description"
+      "description": "brief description",
+      "payment_method": "cash" or "transfer" or "POS" or "unknown",
+      "date": "YYYY-MM-DD or null for today"
     }
   ],
-  "summary": "A friendly confirmation of what was recorded, OR the answer to the user's question, OR a natural conversational reply."
+  "edit_target": {
+    "date": "YYYY-MM-DD or null",
+    "description": "keyword to match",
+    "category": "category to match or null",
+    "old_amount": number or null,
+    "new_amount": number or null,
+    "new_description": "new description or null",
+    "new_category": "new category or null"
+  },
+  "summary": "A friendly confirmation of what was recorded, OR the answer to the user's question, OR a natural conversational reply.",
+  "clarification_needed": null or "A question to ask the user if critical info is missing (e.g., missing date on a receipt)"
 }
 
-If the message genuinely seems like it should contain financial data but you can't parse it, set transactions to [] and write a helpful summary asking for clarification — but do NOT include example prompts like 'Try: I sold...'. Just ask them naturally what they sold or spent.`;
+IMPORTANT: For "log" actions, always include transactions array. For "edit"/"delete" actions, always include edit_target. For "query"/"chat" actions, transactions should be [].
+If the message genuinely seems like it should contain financial data but you can't parse it, set action to "chat", transactions to [] and write a helpful summary asking for clarification — but do NOT include example prompts like 'Try: I sold...'. Just ask them naturally what they sold or spent.`;
+
+// ============ BANK STATEMENT / DOCUMENT PROMPT ============
+const DOCUMENT_PROMPT = `You are Kobowise, an AI financial assistant for Nigerian small businesses.
+
+The user has uploaded a document (bank statement, receipt, or financial record). Your job is to extract ALL transactions from this document.
+
+IMPORTANT PRIVACY RULES:
+1. IGNORE all personal identifiers: account numbers, BVN, session IDs, phone numbers, email addresses
+2. Focus ONLY on: transaction dates, descriptions/narrations, amounts, and whether each is credit (income) or debit (expense)
+3. DO NOT include any customer names, account details, or bank identifiers in your output
+
+EXTRACTION RULES:
+1. Extract EVERY transaction you can find
+2. For bank statements: Credits/Deposits = "income", Debits/Withdrawals = "expense"
+3. Categorize based on the narration/description:
+   - "Transfer from..." / "Credit" / "Deposit" → check narration for business context
+   - "POS" / "Web Payment" → likely expense
+   - "Airtime" / "Data" → Communication/Data expense
+   - "Fuel" / "Petrol" → Generator/Fuel expense
+   - Look for patterns in narrations that suggest business vs personal transactions
+4. Extract payment method: "transfer", "POS", "cash", or "unknown"
+5. Use the date from the statement, NOT today's date
+6. If something looks like a personal transaction (not business-related), still include it but note it in the description
+
+RESPOND ONLY WITH VALID JSON:
+{
+  "action": "log",
+  "transactions": [
+    {
+      "type": "income" or "expense",
+      "category": "category name",
+      "amount": number,
+      "description": "brief description from narration",
+      "payment_method": "transfer" or "POS" or "cash" or "unknown",
+      "date": "YYYY-MM-DD"
+    }
+  ],
+  "summary": "Summary of what was found — e.g., 'Found 15 transactions from your OPay statement (Jan 5-20). 8 credits totaling ₦45,000 and 7 debits totaling ₦23,500. Please review and confirm!'"
+}`;
 
 // ============ PROCESS TEXT INPUT ============
 async function processTextInput(text, businessType, recentTransactionsContext = '') {
-    const prompt = `Business type: ${businessType || 'General'}\n\nRecent Transactions (for answering questions):\n${recentTransactionsContext || 'No recent transactions.'}\n\nUser message:\n"${text}"`;
+    const today = new Date().toISOString().split('T')[0];
+    const dayOfWeek = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+    
+    const prompt = `Business type: ${businessType || 'General'}
+Today's date: ${today} (${dayOfWeek})
+
+Recent Transactions (for answering questions and matching edits):
+${recentTransactionsContext || 'No recent transactions.'}
+
+User message:
+"${text}"`;
 
     try {
         return await executeWithFailover('text', { systemPrompt: EXTRACTION_PROMPT, prompt });
     } catch (err) {
-        return { transactions: [], summary: 'Something went wrong processing your message. Please try again later.' };
+        return { action: 'chat', transactions: [], summary: 'Something went wrong processing your message. Please try again later.' };
     }
 }
 
 // ============ PROCESS IMAGE (OCR) ============
-async function processImage(imageBuffer, mimeType, businessType, recentTransactionsContext = '') {
-    const prompt = `Business type: ${businessType || 'General'}\n\nRecent Transactions (for answering questions):\n${recentTransactionsContext || 'No recent transactions.'}\n\nThe user sent a photo of their sales notebook, receipt, or financial record. \nExtract ALL transaction data you can see in the image.\nIf the handwriting is unclear, do your best and note uncertainty in the description.`;
+async function processImage(images, businessType, recentTransactionsContext = '') {
+    // Convert a single image args object to an array to handle both single and multiple
+    const imagesArray = Array.isArray(images) ? images : [images];
+    const today = new Date().toISOString().split('T')[0];
+    
+    const prompt = `Business type: ${businessType || 'General'}
+Today's date: ${today}
+
+Recent Transactions (for answering questions):
+${recentTransactionsContext || 'No recent transactions.'}
+
+The user sent ${imagesArray.length} photo(s). These could be:
+- Handwritten sales notebook pages (common in Nigerian markets — ruled paper with pen entries)
+- Printed POS receipts or bank transfer receipts
+- Custom business receipts with logo and items
+- Screenshots of mobile banking transfer confirmations
+
+Extract ALL transaction data you can see across ALL these images.
+If the handwriting is unclear, do your best and note uncertainty in the description.
+If NO DATE is visible on the receipt/image, set clarification_needed to ask the user what date this was from.
+Look for payment method clues: "TRANSFER", "POS", "CASH" etc.`;
 
     try {
-        return await executeWithFailover('image', { systemPrompt: EXTRACTION_PROMPT, prompt, imageBuffer, mimeType });
+        const parts = [prompt];
+        
+        for (const img of imagesArray) {
+            parts.push({
+                inlineData: {
+                    data: img.buffer.toString('base64'),
+                    mimeType: img.mimeType
+                }
+            });
+        }
+        
+        // Use Gemini direct via SDK for array of parts
+        const genAI = new GoogleGenerativeAI(getGeminiKeys()[0]);
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const result = await model.generateContent(parts);
+        const responseText = result.response.text();
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error('No JSON found');
+        return JSON.parse(jsonMatch[0]);
     } catch (err) {
-        return { transactions: [], summary: 'Something went wrong reading your photo. Please try again later.' };
+        console.error('Multi-image processing error:', err.message);
+        return { action: 'chat', transactions: [], summary: 'Something went wrong reading your photo(s). Please try again later.' };
+    }
+}
+
+// ============ PROCESS IMAGE PDF ============
+async function processImagePDF(pdfBuffer, businessType, recentTransactionsContext = '') {
+    const today = new Date().toISOString().split('T')[0];
+    
+    const prompt = `Business type: ${businessType || 'General'}
+Today's date: ${today}
+
+The user sent a PDF document that appears to be scanned images (no text layer). 
+Please extract all transactions you can see.
+Note: Since this is an image, we could not automatically redact sensitive info. Please DO NOT include account numbers, BVNs, or customer names in the extracted data.`;
+
+    try {
+        const parts = [
+            prompt,
+            {
+                inlineData: {
+                    data: pdfBuffer.toString('base64'),
+                    mimeType: 'application/pdf'
+                }
+            }
+        ];
+        
+        const genAI = new GoogleGenerativeAI(getGeminiKeys()[0]);
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+        const result = await model.generateContent(parts);
+        const responseText = result.response.text();
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error('No JSON found');
+        return JSON.parse(jsonMatch[0]);
+    } catch (err) {
+        console.error('Image PDF processing error:', err.message);
+        return { action: 'chat', transactions: [], summary: 'Something went wrong processing your PDF. Please try again later.' };
     }
 }
 
 // ============ PROCESS VOICE NOTE ============
 async function processVoiceNote(audioBuffer, mimeType, businessType, recentTransactionsContext = '') {
-    const prompt = `Business type: ${businessType || 'General'}\n\nRecent Transactions (for answering questions):\n${recentTransactionsContext || 'No recent transactions.'}\n\nThe user sent a voice note describing their business day. \nListen carefully — they may speak in English, Pidgin, or a mix.\nExtract ALL financial transactions mentioned.`;
+    const today = new Date().toISOString().split('T')[0];
+    const dayOfWeek = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+    
+    const prompt = `Business type: ${businessType || 'General'}
+Today's date: ${today} (${dayOfWeek})
+
+Recent Transactions (for answering questions):
+${recentTransactionsContext || 'No recent transactions.'}
+
+The user sent a voice note describing their business day. 
+Listen carefully — they may speak in English, Pidgin, or a mix.
+Extract ALL financial transactions mentioned.
+Pay attention to payment methods mentioned: "them send me money" = transfer, "cash" = cash, etc.
+Pay attention to dates mentioned: "yesterday", "last Friday", "on Monday" etc.`;
 
     try {
         return await executeWithFailover('audio', { systemPrompt: EXTRACTION_PROMPT, prompt, audioBuffer, mimeType });
     } catch (err) {
-        return { transactions: [], summary: 'Something went wrong processing your voice note. Please try again later.' };
+        return { action: 'chat', transactions: [], summary: 'Something went wrong processing your voice note. Please try again later.' };
+    }
+}
+
+// ============ PROCESS DOCUMENT (PDF/BANK STATEMENT) ============
+async function processDocument(textContent, businessType, recentTransactionsContext = '') {
+    const prompt = `Business type: ${businessType || 'General'}
+
+Document content (extracted from PDF — sensitive data has been partially redacted):
+---
+${textContent.substring(0, 15000)}
+---
+
+${textContent.length > 15000 ? `\n[Note: Document was truncated. Only first 15000 characters shown. There may be more transactions.]` : ''}`;
+
+    try {
+        return await executeWithFailover('text', { systemPrompt: DOCUMENT_PROMPT, prompt });
+    } catch (err) {
+        return { action: 'chat', transactions: [], summary: 'Something went wrong processing your document. Please try again later.' };
     }
 }
 
@@ -203,6 +382,14 @@ Generate a "Business Health Report" for this week.
 
 STYLE: Write like a caring doctor, not an accountant. Be specific with naira amounts.
 Use emojis. Give actionable advice. Speak plainly — no jargon.
+
+Include analysis of:
+- Revenue vs Expense trends
+- Profit margin health
+- Top expense drivers (cost drivers)
+- Cash flow pattern
+- Payment method breakdown if available
+- Specific, actionable prescriptions
 
 RESPOND IN THIS JSON FORMAT:
 {
@@ -267,5 +454,7 @@ module.exports = {
     processTextInput,
     processImage,
     processVoiceNote,
+    processDocument,
+    processImagePDF,
     generateHealthReport
 };

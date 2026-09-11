@@ -11,10 +11,13 @@
     "@google/generative-ai": "^0.21.0",
     "@libsql/client": "^0.14.0",
     "dotenv": "^16.4.7",
+    "exceljs": "^4.4.0",
     "express": "^4.21.2",
+    "mammoth": "^1.12.2",
     "node-cron": "^4.6.0",
     "node-telegram-bot-api": "^0.66.0",
     "openai": "^7.4.0",
+    "pdf-parse": "^2.4.5",
     "pdfkit-table": "^0.2.11"
   },
   "keywords": [

@@ -102,6 +102,7 @@ async function initDB() {
         'ALTER TABLE admins ADD COLUMN notify_preference INTEGER DEFAULT 1', // 0=Off, 1=Realtime, 2=Daily
         'ALTER TABLE broadcasts ADD COLUMN is_deleted INTEGER DEFAULT 0',
         'ALTER TABLE users ADD COLUMN is_blocked INTEGER DEFAULT 0',
+        'ALTER TABLE transactions ADD COLUMN payment_method TEXT DEFAULT \'unknown\'',
     ];
 
     for (const sql of migrations) {
@@ -357,6 +358,87 @@ async function deleteLastTransaction(userId) {
     });
 
     return tx;
+}
+
+// ============ EDIT / DELETE SPECIFIC TRANSACTION ============
+
+async function updateTransaction(transactionId, userId, updates) {
+    const client = getDB();
+    const fields = [];
+    const args = [];
+
+    for (const [key, value] of Object.entries(updates)) {
+        if (['amount', 'description', 'category', 'type', 'date', 'payment_method'].includes(key)) {
+            fields.push(`${key} = ?`);
+            args.push(value);
+        }
+    }
+
+    if (fields.length === 0) return null;
+
+    args.push(transactionId, userId);
+
+    await client.execute({
+        sql: `UPDATE transactions SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`,
+        args
+    });
+
+    const result = await client.execute({
+        sql: 'SELECT * FROM transactions WHERE id = ? AND user_id = ?',
+        args: [transactionId, userId]
+    });
+    return result.rows[0] || null;
+}
+
+async function deleteTransaction(transactionId, userId) {
+    const client = getDB();
+
+    const result = await client.execute({
+        sql: 'SELECT * FROM transactions WHERE id = ? AND user_id = ?',
+        args: [transactionId, userId]
+    });
+
+    if (!result.rows[0]) return null;
+    const tx = result.rows[0];
+
+    await client.execute({
+        sql: 'DELETE FROM transactions WHERE id = ? AND user_id = ?',
+        args: [transactionId, userId]
+    });
+
+    return tx;
+}
+
+async function findTransactionByContext(userId, filters) {
+    const client = getDB();
+    let sql = 'SELECT * FROM transactions WHERE user_id = ?';
+    const args = [userId];
+
+    if (filters.date) {
+        sql += ' AND date = ?';
+        args.push(filters.date);
+    }
+    if (filters.category) {
+        sql += ' AND LOWER(category) LIKE ?';
+        args.push(`%${filters.category.toLowerCase()}%`);
+    }
+    if (filters.description) {
+        sql += ' AND LOWER(description) LIKE ?';
+        args.push(`%${filters.description.toLowerCase()}%`);
+    }
+    if (filters.amount) {
+        sql += ' AND amount = ?';
+        args.push(filters.amount);
+    }
+    if (filters.type) {
+        sql += ' AND type = ?';
+        args.push(filters.type);
+    }
+
+    sql += ' ORDER BY date DESC, created_at DESC LIMIT 5';
+
+    const result = await client.execute({ sql, args });
+    return result.rows;
 }
 
 // ============ ADMIN ANALYTICS QUERIES ============
@@ -643,6 +725,9 @@ module.exports = {
     getWeeklySummary,
     getLifetimeSummary,
     deleteLastTransaction,
+    updateTransaction,
+    deleteTransaction,
+    findTransactionByContext,
     getAdminStats,
     isAdmin,
     addAdmin,
