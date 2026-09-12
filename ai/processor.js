@@ -155,10 +155,10 @@ RULES FOR EDIT/DELETE:
 3. For edits/deletes, fill in the "edit_target" field with enough detail to find the transaction.
 
 RULES FOR CONVERSATIONAL MESSAGES:
-1. If the user sends a confirmation like "correct", "all correct", "yes", "ok", "perfect", "nice", "good", "right", "that's right", respond warmly — e.g., "Great, glad I got everything right! � Keep sending your transactions whenever you're ready."
-2. If the user sends a greeting like "hi", "hello", "hey", "good morning", respond naturally — e.g., "Hey!  Ready to log today's transactions. Just send me your sales and expenses!"
-3. If the user says "thank you", "thanks", "appreciate it", respond warmly — e.g., "You're welcome! � I'm always here to help."
-4. If the user sends something unrelated to business/finances (random chat), respond briefly and steer back — e.g., "Haha, noted! � But let's keep track of the money — tell me about today's sales or expenses!"
+1. If the user sends a confirmation like "correct", "all correct", "yes", "ok", "perfect", "nice", "good", "right", "that's right", respond warmly - e.g., "Great, glad I got everything right!  Keep sending your transactions whenever you're ready."
+2. If the user sends a greeting like "hi", "hello", "hey", "good morning", respond naturally - e.g., "Hey!  Ready to log today's transactions. Just send me your sales and expenses!"
+3. If the user says "thank you", "thanks", "appreciate it", respond warmly - e.g., "You're welcome!  I'm always here to help."
+4. If the user sends something unrelated to business/finances (random chat), respond briefly and steer back - e.g., "Haha, noted!  But let's keep track of the money - tell me about today's sales or expenses!"
 5. NEVER respond with a generic "I couldn't find any transaction data" to conversational messages. Always be natural and context-aware.
 
 RESPOND ONLY WITH VALID JSON in this exact format:
@@ -188,7 +188,7 @@ RESPOND ONLY WITH VALID JSON in this exact format:
 }
 
 IMPORTANT: For "log" actions, always include transactions array. For "edit"/"delete" actions, always include edit_target. For "query"/"chat" actions, transactions should be [].
-If the message genuinely seems like it should contain financial data but you can't parse it, set action to "chat", transactions to [] and write a helpful summary asking for clarification — but do NOT include example prompts like 'Try: I sold...'. Just ask them naturally what they sold or spent.`;
+If the message genuinely seems like it should contain financial data but you can't parse it, set action to "chat", transactions to [] and write a helpful summary asking for clarification - but do NOT include example prompts like 'Try: I sold...'. Just ask them naturally what they sold or spent.`;
 
 // ============ BANK STATEMENT / DOCUMENT PROMPT ============
 const DOCUMENT_PROMPT = `You are Kobowise, an AI financial assistant for Nigerian small businesses.
@@ -226,7 +226,7 @@ RESPOND ONLY WITH VALID JSON:
       "date": "YYYY-MM-DD"
     }
   ],
-  "summary": "Summary of what was found — e.g., 'Found 15 transactions from your OPay statement (Jan 5-20). 8 credits totaling ₦45,000 and 7 debits totaling ₦23,500. Please review and confirm!'"
+  "summary": "Summary of what was found - e.g., 'Found 15 transactions from your OPay statement (Jan 5-20). 8 credits totaling ₦45,000 and 7 debits totaling ₦23,500. Please review and confirm!'"
 }`;
 
 // ============ PROCESS TEXT INPUT ============
@@ -263,7 +263,7 @@ Recent Transactions (for answering questions):
 ${recentTransactionsContext || 'No recent transactions.'}
 
 The user sent ${imagesArray.length} photo(s). These could be:
-- Handwritten sales notebook pages (common in Nigerian markets — ruled paper with pen entries)
+- Handwritten sales notebook pages (common in Nigerian markets - ruled paper with pen entries)
 - Printed POS receipts or bank transfer receipts
 - Custom business receipts with logo and items
 - Screenshots of mobile banking transfer confirmations
@@ -347,7 +347,7 @@ Recent Transactions (for answering questions):
 ${recentTransactionsContext || 'No recent transactions.'}
 
 The user sent a voice note describing their business day. 
-Listen carefully — they may speak in English, Pidgin, or a mix.
+Listen carefully - they may speak in English, Pidgin, or a mix.
 Extract ALL financial transactions mentioned.
 Pay attention to payment methods mentioned: "them send me money" = transfer, "cash" = cash, etc.
 Pay attention to dates mentioned: "yesterday", "last Friday", "on Monday" etc.`;
@@ -363,7 +363,7 @@ Pay attention to dates mentioned: "yesterday", "last Friday", "on Monday" etc.`;
 async function processDocument(textContent, businessType, recentTransactionsContext = '') {
     const prompt = `Business type: ${businessType || 'General'}
 
-Document content (extracted from PDF — sensitive data has been partially redacted):
+Document content (extracted from PDF - sensitive data has been partially redacted):
 ---
 ${textContent.substring(0, 15000)}
 ---
@@ -382,7 +382,7 @@ const HEALTH_REPORT_PROMPT = `You are Kobowise, an AI Business Doctor for Nigeri
 Generate a "Business Health Report" for this week.
 
 STYLE: Write like a caring doctor, not an accountant. Be specific with naira amounts.
-Use emojis. Give actionable advice. Speak plainly — no jargon.
+Use emojis. Give actionable advice. Speak plainly - no jargon.
 
 Include analysis of:
 - Revenue vs Expense trends
@@ -442,7 +442,7 @@ ${previousReport ? `LAST WEEK: Revenue ₦${previousReport.revenue?.toLocaleStri
 
 // ============ FALLBACK REPORT ============
 function generateFallbackReport(summary, businessName) {
-    const msg = ` ${businessName.toUpperCase()} — Weekly Health Report\n━━━━━━━━━━━━━━━━━━━━━━\n\n� DIAGNOSIS\n\n Revenue: ₦${summary.revenue.toLocaleString()}\n� Expenses: ₦${summary.expenses.toLocaleString()}\n Profit: ₦${summary.profit.toLocaleString()} (${summary.margin}% margin)\n\n${summary.profit > 0 ? '✅ You\'re in profit this week!' : '⚠ You spent more than you earned this week.'}\n\n━━━━━━━━━━━━━━━━━━━━━━\nReply "more" for detailed breakdown`;
+    const msg = ` ${businessName.toUpperCase()} - Weekly Health Report\n━━━━━━━━━━━━━━━━━━━━━━\n\n DIAGNOSIS\n\n Revenue: ₦${summary.revenue.toLocaleString()}\n Expenses: ₦${summary.expenses.toLocaleString()}\n Profit: ₦${summary.profit.toLocaleString()} (${summary.margin}% margin)\n\n${summary.profit > 0 ? '✅ You\'re in profit this week!' : '⚠ You spent more than you earned this week.'}\n\n━━━━━━━━━━━━━━━━━━━━━━\nReply "more" for detailed breakdown`;
 
     return {
         telegram_message: msg,

@@ -67,7 +67,7 @@ function initBot(app, webhookUrl) {
 }
 
 /**
- * Safe wrapper for bot.sendMessage — catches network errors gracefully
+ * Safe wrapper for bot.sendMessage - catches network errors gracefully
  */
 async function safeSend(chatId, text, options) {
     try {
@@ -101,7 +101,7 @@ async function enforceRateLimit(user) {
     return null;
 }
 
-// ============ /START — ONBOARDING ============
+// ============ /START - ONBOARDING ============
 async function handleStart(msg) {
     const chatId = msg.chat.id;
     const telegramId = String(msg.from.id);
@@ -113,7 +113,7 @@ async function handleStart(msg) {
         if (user && user.onboarding_step === 'complete') {
             const plan = Number(user.is_premium) === 1 ? ' Premium' : ' Free';
             await safeSend(chatId,
-                `Welcome back! \n\nI remember you — *${user.business_name}*\nPlan: ${plan}\n\nJust send me your daily sales and expenses as usual. Voice notes, photos, or text — I've got you!\n\n /report — Get your health report\n /status — Check your usage\n /export — Download financial reports (PDF & Excel)\n /premium — Upgrade your plan`,
+                `Welcome back! \n\nI remember you - *${user.business_name}*\nPlan: ${plan}\n\nJust send me your daily sales and expenses as usual. Voice notes, photos, or text - I've got you!\n\n /report - Get your health report\n /status - Check your usage\n /export - Download financial reports (PDF & Excel)\n /premium - Upgrade your plan`,
                 { parse_mode: 'Markdown' }
             );
             return;
@@ -126,7 +126,7 @@ async function handleStart(msg) {
         await updateUser(telegramId, { onboarding_step: 'ask_type' });
 
         await safeSend(chatId,
-            `Welcome to *Kobowise*! \n\nI'm your *Business Doctor*. I help you understand where your money is going — no accounting needed.\n\nWhat type of business do you run?`,
+            `Welcome to *Kobowise*! \n\nI'm your *Business Doctor*. I help you understand where your money is going - no accounting needed.\n\nWhat type of business do you run?`,
             {
                 parse_mode: 'Markdown',
                 reply_markup: {
@@ -167,7 +167,7 @@ Here are the commands you can use:
 Just send me text ("Sold a shoe for 5000"), a voice note, or a photo of a receipt, and I'll automatically track it!
 
  *Upload documents too!*
-Send me a PDF bank statement or receipt and I'll extract all transactions automatically — with your sensitive data stripped for privacy.
+Send me a PDF bank statement or receipt and I'll extract all transactions automatically - with your sensitive data stripped for privacy.
 
  *Edit records:*
 Just tell me naturally: "Change yesterday's transport to 3000" or "Delete Monday's electricity entry"`, 
@@ -205,7 +205,7 @@ async function handlePremium(msg) {
         }
 
         await safeSend(chatId,
-            `${prefixMsg}━━━━━━━━━━━━━━━━━━\n\n *Free Plan* (Current)\n• ${FREE_DAILY_LIMIT} messages per day\n• Weekly health reports (Sundays)\n• Basic expense categorization\n\n━━━━━━━━━━━━━━━━━━\n\n *Premium Plan* — ₦1,500/month\n• ✅ *Unlimited* messages per day\n• ✅ Daily mini-reports + weekly deep reports\n• ✅ Advanced AI insights & prescriptions\n• ✅ Expense trend analysis\n• ✅ Best/worst day identification\n• ✅ Full transaction history\n• ✅ Custom expense categories\n• ✅ Priority support\n\n━━━━━━━━━━━━━━━━━━\n\n *How to Renew/Upgrade*\nPlease transfer exactly *₦1,500* to the official account below:\n\nBank: *Moniepoint MFB*\nAcc Name: *Kobowise Technologies And Business Solutions*\nAcc No: \`3001531947\`\n\n⚠ *ANTI-SCAM DISCLAIMER*\nKobowise will NEVER ask you to pay into any other account. The account details listed above are the ONLY verified and official payment channels. Do not send money to any other account.\n\n_Once you have made the transfer, click the button below to submit your receipt!_`,
+            `${prefixMsg}━━━━━━━━━━━━━━━━━━\n\n *Free Plan* (Current)\n• ${FREE_DAILY_LIMIT} messages per day\n• Weekly health reports (Sundays)\n• Basic expense categorization\n\n━━━━━━━━━━━━━━━━━━\n\n *Premium Plan* - ₦1,500/month\n• ✅ *Unlimited* messages per day\n• ✅ Daily mini-reports + weekly deep reports\n• ✅ Advanced AI insights & prescriptions\n• ✅ Expense trend analysis\n• ✅ Best/worst day identification\n• ✅ Full transaction history\n• ✅ Custom expense categories\n• ✅ Priority support\n\n━━━━━━━━━━━━━━━━━━\n\n *How to Renew/Upgrade*\nPlease transfer exactly *₦1,500* to the official account below:\n\nBank: *Moniepoint MFB*\nAcc Name: *Kobowise Technologies And Business Solutions*\nAcc No: \`3001531947\`\n\n⚠ *ANTI-SCAM DISCLAIMER*\nKobowise will NEVER ask you to pay into any other account. The account details listed above are the ONLY verified and official payment channels. Do not send money to any other account.\n\n_Once you have made the transfer, click the button below to submit your receipt!_`,
             { 
                 parse_mode: 'Markdown',
                 reply_markup: {
@@ -254,14 +254,14 @@ async function handleStatus(msg) {
         try {
             const summary = await getWeeklySummary(user.id, weekStart, weekEnd);
             if (summary.transaction_count > 0) {
-                weekSummary = `\n\n *This Week So Far:*\n Revenue: ${formatNaira(summary.revenue)}\n� Expenses: ${formatNaira(summary.expenses)}\n Profit: ${formatNaira(summary.profit)}\n Transactions: ${summary.transaction_count}`;
+                weekSummary = `\n\n *This Week So Far:*\n Revenue: ${formatNaira(summary.revenue)}\n Expenses: ${formatNaira(summary.expenses)}\n Profit: ${formatNaira(summary.profit)}\n Transactions: ${summary.transaction_count}`;
             } else {
                 weekSummary = '\n\n _No transactions recorded this week yet._';
             }
         } catch (e) { /* ignore */ }
 
         await safeSend(chatId,
-            ` *Account Status*\n\n Business: *${user.business_name}*\n Type: ${user.business_type}\n� Plan: ${plan}\n\n⏱ *Daily Usage:*\n${usageBar}${weekSummary}\n\n${isPremium ? ' _Enjoying premium? Thank you for your support!_' : ' _Send /premium to unlock unlimited messages._'}`,
+            ` *Account Status*\n\n Business: *${user.business_name}*\n Type: ${user.business_type}\n Plan: ${plan}\n\n⏱ *Daily Usage:*\n${usageBar}${weekSummary}\n\n${isPremium ? ' _Enjoying premium? Thank you for your support!_' : ' _Send /premium to unlock unlimited messages._'}`,
             { parse_mode: 'Markdown' }
         );
     } catch (err) {
@@ -289,7 +289,7 @@ async function handleReportCommand(msg) {
 
         if (summary.transaction_count === 0) {
             await safeSend(chatId,
-                ' No transactions recorded this week yet!\n\nStart sending me your daily sales and expenses, and I\'ll have a report ready for you by Sunday. �'
+                ' No transactions recorded this week yet!\n\nStart sending me your daily sales and expenses, and I\'ll have a report ready for you by Sunday. '
             );
             return;
         }
@@ -330,13 +330,13 @@ async function handleBalance(msg) {
         const todayProfitEmoji = summary.today_profit >= 0 ? '' : '';
         const marginStr = summary.margin >= 0 ? `${summary.margin}%` : `${summary.margin}%`;
 
-        let balanceMsg = ` *${user.business_name} — Balance Overview*\n\n`;
+        let balanceMsg = ` *${user.business_name} - Balance Overview*\n\n`;
         balanceMsg += `━━━━━━━━━━━━━━━━━━\n\n`;
 
         // Today's snapshot
         balanceMsg += ` *Today:*\n`;
         balanceMsg += `    Revenue: ${formatNaira(summary.today_revenue)}\n`;
-        balanceMsg += `   � Expenses: ${formatNaira(summary.today_expenses)}\n`;
+        balanceMsg += `    Expenses: ${formatNaira(summary.today_expenses)}\n`;
         balanceMsg += `   ${todayProfitEmoji} Profit: *${formatNaira(summary.today_profit)}*\n\n`;
 
         balanceMsg += `━━━━━━━━━━━━━━━━━━\n\n`;
@@ -344,9 +344,9 @@ async function handleBalance(msg) {
         // All-time totals
         balanceMsg += ` *All-Time Totals:*\n`;
         balanceMsg += `    Total Revenue: ${formatNaira(summary.revenue)}\n`;
-        balanceMsg += `   � Total Expenses: ${formatNaira(summary.expenses)}\n`;
+        balanceMsg += `    Total Expenses: ${formatNaira(summary.expenses)}\n`;
         balanceMsg += `   ${profitEmoji} Net Profit: *${formatNaira(summary.profit)}*\n`;
-        balanceMsg += `   � Profit Margin: *${marginStr}*\n\n`;
+        balanceMsg += `    Profit Margin: *${marginStr}*\n\n`;
 
         balanceMsg += ` Total Entries: ${summary.transaction_count}\n\n`;
         balanceMsg += `_Send /report for a detailed weekly breakdown._`;
@@ -358,7 +358,7 @@ async function handleBalance(msg) {
     }
 }
 
-// ============ /EXPORT — UPGRADED WITH FORMAT OPTIONS ============
+// ============ /EXPORT - UPGRADED WITH FORMAT OPTIONS ============
 async function handleExport(msg) {
     const chatId = msg.chat.id;
     const telegramId = String(msg.from.id);
@@ -423,12 +423,12 @@ async function handleCancel(msg) {
         const deleted = await deleteLastTransaction(user.id);
 
         if (deleted) {
-            const typeEmoji = deleted.type === 'income' ? '' : '�';
+            const typeEmoji = deleted.type === 'income' ? '' : '';
             response += `✅ *Last entry deleted:*\n${typeEmoji} ${deleted.description}: ${formatNaira(Number(deleted.amount))} (${deleted.category})\n\n`;
             response += `_Entry from ${deleted.date} has been removed._`;
         } else {
             if (!response) {
-                response = ' Nothing to cancel — no recent entries found.\n\n_Your transaction history is clean!_';
+                response = ' Nothing to cancel - no recent entries found.\n\n_Your transaction history is clean!_';
             } else {
                 response += '_No recent transactions to undo._';
             }
@@ -456,7 +456,7 @@ async function handleSettings(msg) {
         const lang = user.language || 'en';
         const notif = Number(user.notifications_enabled ?? 1) === 1;
 
-        const langLabel = lang === 'en' ? '�� English' : '�� Pidgin';
+        const langLabel = lang === 'en' ? ' English' : ' Pidgin';
         const notifLabel = notif ? ' ON' : ' OFF';
 
         await safeSend(chatId,
@@ -466,8 +466,8 @@ async function handleSettings(msg) {
                 reply_markup: {
                     inline_keyboard: [
                         [
-                            { text: lang === 'en' ? '✅ English' : '�� English', callback_data: 'settings_lang_en' },
-                            { text: lang === 'pidgin' ? '✅ Pidgin' : '�� Pidgin', callback_data: 'settings_lang_pidgin' }
+                            { text: lang === 'en' ? '✅ English' : ' English', callback_data: 'settings_lang_en' },
+                            { text: lang === 'pidgin' ? '✅ Pidgin' : ' Pidgin', callback_data: 'settings_lang_pidgin' }
                         ],
                         [
                             { text: notif ? ' Notifications: ON' : ' Notifications: OFF', callback_data: 'settings_notif_toggle' }
@@ -501,11 +501,11 @@ async function handleCallbackQuery(query) {
         // ---- SETTINGS CALLBACKS ----
         if (data === 'settings_lang_en') {
             await updateUser(telegramId, { language: 'en' });
-            await bot.answerCallbackQuery(query.id, { text: '�� Language set to English!' });
+            await bot.answerCallbackQuery(query.id, { text: ' Language set to English!' });
             await handleSettings({ chat: { id: chatId }, from: { id: query.from.id } });
         } else if (data === 'settings_lang_pidgin') {
             await updateUser(telegramId, { language: 'pidgin' });
-            await bot.answerCallbackQuery(query.id, { text: '�� Language set to Pidgin!' });
+            await bot.answerCallbackQuery(query.id, { text: ' Language set to Pidgin!' });
             await handleSettings({ chat: { id: chatId }, from: { id: query.from.id } });
         } else if (data === 'settings_notif_toggle') {
             const current = Number(user.notifications_enabled ?? 1);
@@ -533,7 +533,7 @@ async function handleCallbackQuery(query) {
                     inline_keyboard: [
                         [
                             { text: ' This Week', callback_data: 'export_range_week' },
-                            { text: '� This Month', callback_data: 'export_range_month' },
+                            { text: ' This Month', callback_data: 'export_range_month' },
                         ],
                         [
                             { text: ' All Time', callback_data: 'export_range_all' },
@@ -542,73 +542,79 @@ async function handleCallbackQuery(query) {
                 }
             });
 
-        // ---- EX            await bot.answerCallbackQuery(query.id, { text: ' Generating...' });
-            const loadingMsg = await safeSend(chatId, ' Generating your export file... This may take a moment.');
+        } else if (data.startsWith('export_range_')) {
+            const pending = pendingActions.get(telegramId);
+            if (!pending || pending.type !== 'export') {
+                await bot.answerCallbackQuery(query.id, { text: '❌ Please start again with /export' });
+                return;
+            }
+
+            await bot.answerCallbackQuery(query.id, { text: 'Generating...' });
+            const loadingMsg = await safeSend(chatId, 'Generating your export file... This may take a moment.');
 
             // Remove the inline keyboard from the "Select date range" message
             if (query.message) {
                 try {
                     await bot.editMessageReplyMarkup({ inline_keyboard: [] }, { chat_id: chatId, message_id: query.message.message_id });
-                } catch (e) { /* ignore */ }
+                } catch (e) { console.error('Failed to clear keyboard:', e.message); }
             }
 
             const range = data.replace('export_range_', '');
             const format = pending.format;
             pendingActions.delete(telegramId);
 
-            // Calculate date range
-            let startDate = null, endDate = null;
-            const now = new Date();
-            if (range === 'week') {
-                const { weekStart, weekEnd } = getWeekRange();
-                startDate = weekStart;
-                endDate = weekEnd;
-            } else if (range === 'month') {
-                startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-                endDate = now.toISOString().split('T')[0];
-            }
-            // 'all' = no date filter
-
-            const txOptions = {};
-            if (startDate) txOptions.startDate = startDate;
-            if (endDate) txOptions.endDate = endDate;
-
-            const transactions = await getTransactions(user.id, txOptions);
-
-            if (!transactions || transactions.length === 0) {
-                if (loadingMsg) {
-                    try { await bot.deleteMessage(chatId, loadingMsg.message_id); } catch (e) {}
-                }
-                await safeSend(chatId, ' No transactions found for this period!\n\nStart sending me your sales and expenses and I\'ll have data ready for you.');
-                return;
-            }
-
-            const { generateProfessionalPDF, generateIncomeStatementPDF, generateExcelWorkbook } = require('../utils/export-generator');
-
-            const totalIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
-            const totalExpense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
-            const rangeName = range === 'week' ? 'This Week' : range === 'month' ? 'This Month' : 'All Time';
-
             try {
+                // Calculate date range
+                let startDate = null, endDate = null;
+                const now = new Date();
+                if (range === 'week') {
+                    const { weekStart, weekEnd } = getWeekRange();
+                    startDate = weekStart;
+                    endDate = weekEnd;
+                } else if (range === 'month') {
+                    startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+                    endDate = now.toISOString().split('T')[0];
+                }
+
+                const txOptions = {};
+                if (startDate) txOptions.startDate = startDate;
+                if (endDate) txOptions.endDate = endDate;
+
+                const transactions = await getTransactions(user.id, txOptions);
+
+                if (!transactions || transactions.length === 0) {
+                    if (loadingMsg) {
+                        try { await bot.deleteMessage(chatId, loadingMsg.message_id); } catch (e) {}
+                    }
+                    await safeSend(chatId, 'No transactions found for this period!\n\nStart sending me your sales and expenses and I\'ll have data ready for you.');
+                    return;
+                }
+
+                const { generateProfessionalPDF, generateIncomeStatementPDF, generateExcelWorkbook } = require('../utils/export-generator');
+
+                const totalIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
+                const totalExpense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
+                const rangeName = range === 'week' ? 'This Week' : range === 'month' ? 'This Month' : 'All Time';
+
                 if (format === 'export_pdf') {
                     const pdfBuffer = await generateProfessionalPDF(user, transactions);
                     const fileName = `Kobowise_${user.business_name.replace(/[^a-zA-Z0-9]/g, '_')}_Report_${new Date().toISOString().split('T')[0]}.pdf`;
                     await bot.sendDocument(chatId, pdfBuffer, {
-                        caption: ` *${user.business_name}* — Sales & Expense Record\n\n Period: ${rangeName}\n ${transactions.length} transactions\n Revenue: ${formatNaira(totalIncome)}\n Expenses: ${formatNaira(totalExpense)}\n Profit: ${formatNaira(totalIncome - totalExpense)}`,
+                        caption: `*${user.business_name}* - Sales & Expense Record\n\nPeriod: ${rangeName}\n${transactions.length} transactions\nRevenue: ${formatNaira(totalIncome)}\nExpenses: ${formatNaira(totalExpense)}\nProfit: ${formatNaira(totalIncome - totalExpense)}`,
                         parse_mode: 'Markdown'
                     }, { filename: fileName, contentType: 'application/pdf' });
                 } else if (format === 'export_excel') {
                     const excelBuffer = await generateExcelWorkbook(user, transactions);
                     const fileName = `Kobowise_${user.business_name.replace(/[^a-zA-Z0-9]/g, '_')}_Workbook_${new Date().toISOString().split('T')[0]}.xlsx`;
                     await bot.sendDocument(chatId, excelBuffer, {
-                        caption: ` *${user.business_name}* — Full Excel Workbook\n\n Period: ${rangeName}\n ${transactions.length} transactions\n\n*Sheets included:*\n• Transactions (full ledger)\n• Income Statement\n• Cash Flow\n• Summary Dashboard\n\n Revenue: ${formatNaira(totalIncome)}\n Expenses: ${formatNaira(totalExpense)}\n Profit: ${formatNaira(totalIncome - totalExpense)}`,
+                        caption: `*${user.business_name}* - Full Excel Workbook\n\nPeriod: ${rangeName}\n${transactions.length} transactions\n\n*Sheets included:*\n• Transactions (full ledger)\n• Income Statement\n• Cash Flow\n• Summary Dashboard\n\nRevenue: ${formatNaira(totalIncome)}\nExpenses: ${formatNaira(totalExpense)}\nProfit: ${formatNaira(totalIncome - totalExpense)}`,
                         parse_mode: 'Markdown'
                     }, { filename: fileName, contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
                 } else if (format === 'export_income_stmt') {
                     const pdfBuffer = await generateIncomeStatementPDF(user, transactions);
                     const fileName = `Kobowise_${user.business_name.replace(/[^a-zA-Z0-9]/g, '_')}_Income_Statement_${new Date().toISOString().split('T')[0]}.pdf`;
                     await bot.sendDocument(chatId, pdfBuffer, {
-                        caption: ` *${user.business_name}* — Income Statement\n\n Period: ${rangeName}\n Revenue: ${formatNaira(totalIncome)}\n Expenses: ${formatNaira(totalExpense)}\n Net Profit: ${formatNaira(totalIncome - totalExpense)}`,
+                        caption: `*${user.business_name}* - Income Statement\n\nPeriod: ${rangeName}\nRevenue: ${formatNaira(totalIncome)}\nExpenses: ${formatNaira(totalExpense)}\nNet Profit: ${formatNaira(totalIncome - totalExpense)}`,
                         parse_mode: 'Markdown'
                     }, { filename: fileName, contentType: 'application/pdf' });
                 }
@@ -656,8 +662,8 @@ async function handleCallbackQuery(query) {
             pendingActions.delete(telegramId);
 
             if (result) {
-                await bot.answerCallbackQuery(query.id, { text: '� Deleted!' });
-                await safeSend(chatId, `� *Record deleted!*\n\n${pending.summary}`, { parse_mode: 'Markdown' });
+                await bot.answerCallbackQuery(query.id, { text: ' Deleted!' });
+                await safeSend(chatId, ` *Record deleted!*\n\n${pending.summary}`, { parse_mode: 'Markdown' });
             } else {
                 await bot.answerCallbackQuery(query.id, { text: '❌ Failed to delete.' });
                 await safeSend(chatId, '❌ Could not delete that record. It may have already been removed.');
@@ -717,12 +723,12 @@ async function handleCallbackQuery(query) {
                     const totalOut = expenses.reduce((s, t) => s + Number(t.amount), 0);
 
                     if (incomes.length > 0) previewMsg += ` *${incomes.length} credits* totaling ${formatNaira(totalIn)}\n`;
-                    if (expenses.length > 0) previewMsg += `� *${expenses.length} debits* totaling ${formatNaira(totalOut)}\n`;
+                    if (expenses.length > 0) previewMsg += ` *${expenses.length} debits* totaling ${formatNaira(totalOut)}\n`;
 
                     previewMsg += '\n*Preview:*\n';
                     result.transactions.slice(0, 5).forEach(t => {
-                        const emoji = t.type === 'income' ? '' : '�';
-                        previewMsg += `${emoji} ${t.date || 'No date'} — ${t.description}: ${formatNaira(t.amount)}\n`;
+                        const emoji = t.type === 'income' ? '' : '';
+                        previewMsg += `${emoji} ${t.date || 'No date'} - ${t.description}: ${formatNaira(t.amount)}\n`;
                     });
                     if (result.transactions.length > 5) previewMsg += `_...and ${result.transactions.length - 5} more_\n`;
                     previewMsg += '\n*Save all these transactions to your records?*';
@@ -836,7 +842,7 @@ async function handleVoice(msg) {
         }
         const usageWarning = rateResult?.warning || '';
 
-        await safeSend(chatId, '� Listening to your voice note...');
+        await safeSend(chatId, ' Listening to your voice note...');
         await bot.sendChatAction(chatId, 'typing').catch(() => {});
 
         // Download voice file from Telegram
@@ -933,7 +939,7 @@ async function handlePhoto(msg) {
         if (groupId) {
             if (!mediaGroups.has(groupId)) {
                 mediaGroups.set(groupId, { items: [], timer: null, chatId, telegramId, usageWarning });
-                await safeSend(chatId, '� Receiving multiple files... This might take several seconds.');
+                await safeSend(chatId, ' Receiving multiple files... This might take several seconds.');
             }
             
             const group = mediaGroups.get(groupId);
@@ -964,7 +970,7 @@ async function handlePhoto(msg) {
 // ============ PROCESS DOCUMENT FILE ============
 async function processDocumentFile(fileId, mimeType, fileName, chatId, telegramId, user, password = null) {
     try {
-        await safeSend(chatId, ' Processing your document...\n� _Extracting data..._', { parse_mode: 'Markdown' });
+        await safeSend(chatId, ' Processing your document...\n _Extracting data..._', { parse_mode: 'Markdown' });
         await bot.sendChatAction(chatId, 'typing').catch(() => {});
 
         const file = await bot.getFile(fileId);
@@ -995,7 +1001,7 @@ async function processDocumentFile(fileId, mimeType, fileName, chatId, telegramI
                         return;
                     }
                     
-                    await safeSend(chatId, '� *This PDF is password-protected.*\n\nPlease reply with the password to unlock it.', { parse_mode: 'Markdown' });
+                    await safeSend(chatId, ' *This PDF is password-protected.*\n\nPlease reply with the password to unlock it.', { parse_mode: 'Markdown' });
                     return;
                 }
                 await safeSend(chatId, `❌ ${pdfErr.message}\n\nIf this is a bank statement, try:\n1. Download it again from your app\n2. Try taking a screenshot instead and sending it as a photo `);
@@ -1048,12 +1054,12 @@ async function processDocumentFile(fileId, mimeType, fileName, chatId, telegramI
             const totalOut = expenses.reduce((s, t) => s + Number(t.amount), 0);
 
             if (incomes.length > 0) previewMsg += ` *${incomes.length} credits* totaling ${formatNaira(totalIn)}\n`;
-            if (expenses.length > 0) previewMsg += `� *${expenses.length} debits* totaling ${formatNaira(totalOut)}\n`;
+            if (expenses.length > 0) previewMsg += ` *${expenses.length} debits* totaling ${formatNaira(totalOut)}\n`;
 
             previewMsg += '\n*Preview:*\n';
             result.transactions.slice(0, 5).forEach(t => {
-                const emoji = t.type === 'income' ? '' : '�';
-                previewMsg += `${emoji} ${t.date || 'No date'} — ${t.description}: ${formatNaira(t.amount)}\n`;
+                const emoji = t.type === 'income' ? '' : '';
+                previewMsg += `${emoji} ${t.date || 'No date'} - ${t.description}: ${formatNaira(t.amount)}\n`;
             });
             if (result.transactions.length > 5) previewMsg += `_...and ${result.transactions.length - 5} more_\n`;
             previewMsg += '\n*Save all these transactions to your records?*';
@@ -1113,7 +1119,7 @@ async function handleDocument(msg) {
         if (groupId) {
             if (!mediaGroups.has(groupId)) {
                 mediaGroups.set(groupId, { items: [], timer: null, chatId, telegramId });
-                await safeSend(chatId, '� Receiving multiple documents... This might take several seconds.');
+                await safeSend(chatId, ' Receiving multiple documents... This might take several seconds.');
             }
             
             const group = mediaGroups.get(groupId);
@@ -1205,8 +1211,8 @@ async function handleAIResponse(chatId, telegramId, user, result, source, usageW
         }
 
         // Ask for confirmation
-        const typeEmoji = match.type === 'income' ? '' : '�';
-        const confirmMsg = ` *Edit this record?*\n\n${typeEmoji} ${match.date} — ${match.description}: ${formatNaira(Number(match.amount))} (${match.category})\n\n*Changes:*\n${changeDesc}`;
+        const typeEmoji = match.type === 'income' ? '' : '';
+        const confirmMsg = ` *Edit this record?*\n\n${typeEmoji} ${match.date} - ${match.description}: ${formatNaira(Number(match.amount))} (${match.category})\n\n*Changes:*\n${changeDesc}`;
 
         pendingActions.set(telegramId, {
             type: 'edit',
@@ -1249,13 +1255,13 @@ async function handleAIResponse(chatId, telegramId, user, result, source, usageW
         }
 
         const match = matches[0];
-        const typeEmoji = match.type === 'income' ? '' : '�';
-        const confirmMsg = `� *Delete this record?*\n\n${typeEmoji} ${match.date} — ${match.description}: ${formatNaira(Number(match.amount))} (${match.category})\n\n_This action cannot be undone._`;
+        const typeEmoji = match.type === 'income' ? '' : '';
+        const confirmMsg = ` *Delete this record?*\n\n${typeEmoji} ${match.date} - ${match.description}: ${formatNaira(Number(match.amount))} (${match.category})\n\n_This action cannot be undone._`;
 
         pendingActions.set(telegramId, {
             type: 'delete',
             transactionId: match.id,
-            summary: `${typeEmoji} ${match.date} — ${match.description}: ${formatNaira(Number(match.amount))}`,
+            summary: `${typeEmoji} ${match.date} - ${match.description}: ${formatNaira(Number(match.amount))}`,
         });
 
         await safeSend(chatId, confirmMsg, {
@@ -1263,7 +1269,7 @@ async function handleAIResponse(chatId, telegramId, user, result, source, usageW
             reply_markup: {
                 inline_keyboard: [
                     [
-                        { text: '� Yes, delete', callback_data: 'confirm_delete_yes' },
+                        { text: ' Yes, delete', callback_data: 'confirm_delete_yes' },
                         { text: '↩ Cancel', callback_data: 'confirm_delete_no' },
                     ]
                 ]
@@ -1303,14 +1309,14 @@ async function handleOnboarding(chatId, telegramId, text, user) {
         await updateUser(telegramId, { business_name: text, onboarding_step: 'ask_location' });
 
         await safeSend(chatId,
-            `Got it, *${text}*! �\n\nLastly, what City or State are you operating from? (e.g., Lagos, Abuja, Port Harcourt)`,
+            `Got it, *${text}*! \n\nLastly, what City or State are you operating from? (e.g., Lagos, Abuja, Port Harcourt)`,
             { parse_mode: 'Markdown' }
         );
     } else if (user.onboarding_step === 'ask_location') {
         await updateUser(telegramId, { location: text, onboarding_step: 'complete' });
 
         await safeSend(chatId,
-            `� You're all set!\n\nFrom now on, just send me:\n Photo of your sales book or receipts\n Voice note about your day\n✍ Or just type it out\n PDF bank statements or receipts\n\nI'll track everything and give you a *health report every Sunday*.\n\n Your plan:  Free (${FREE_DAILY_LIMIT} messages/day)\n Send /premium to unlock unlimited\n Send /export for professional PDF & Excel reports\n\n *Try it now* — tell me about today's sales!`,
+            ` You're all set!\n\nFrom now on, just send me:\n Photo of your sales book or receipts\n Voice note about your day\n✍ Or just type it out\n PDF bank statements or receipts\n\nI'll track everything and give you a *health report every Sunday*.\n\n Your plan:  Free (${FREE_DAILY_LIMIT} messages/day)\n Send /premium to unlock unlimited\n Send /export for professional PDF & Excel reports\n\n *Try it now* - tell me about today's sales!`,
             { parse_mode: 'Markdown' }
         );
 
@@ -1318,7 +1324,7 @@ async function handleOnboarding(chatId, telegramId, text, user) {
         try {
             const { sendAdminAlert } = require('./admin');
             const username = user.telegram_username ? '@' + user.telegram_username : 'No username';
-            await sendAdminAlert(`� *New User Registered!*\n\n• Business: ${user.business_name}\n• Type: ${user.business_type}\n• Location: ${text}\n• Username: ${username}`);
+            await sendAdminAlert(` *New User Registered!*\n\n• Business: ${user.business_name}\n• Type: ${user.business_type}\n• Location: ${text}\n• Username: ${username}`);
         } catch(e) {
             console.error('Failed to notify admins:', e);
         }
@@ -1342,15 +1348,15 @@ function formatConfirmation(transactions, summary) {
     if (expenses.length > 0) {
         expenses.forEach(t => {
             const catEmoji = t.category === 'Supplies' || t.category === 'Raw Materials' || t.category === 'Stock Purchase' ? '' :
-                            t.category === 'Transport' || t.category === 'Loading/Haulage' ? '�' :
-                            t.category === 'Staff/Wages' ? '�' :
+                            t.category === 'Transport' || t.category === 'Loading/Haulage' ? '' :
+                            t.category === 'Staff/Wages' ? '' :
                             t.category === 'Utilities' || t.category === 'Generator/Fuel' || t.category === 'Electricity' ? '⚡' :
                             t.category === 'Marketing/Advertising' ? '' :
-                            t.category === 'Delivery Fees' ? '�' :
+                            t.category === 'Delivery Fees' ? '' :
                             t.category === 'Rent' ? '' :
                             t.category === 'Communication/Data' ? '' :
                             t.category === 'Equipment' ? '' :
-                            t.category === 'Bank Charges' || t.category === 'Interest' ? '' : '�';
+                            t.category === 'Bank Charges' || t.category === 'Interest' ? '' : '';
             const methodTag = t.payment_method && t.payment_method !== 'unknown' ? ` [${t.payment_method}]` : '';
             msg += `${catEmoji} ${t.description}: *${formatNaira(t.amount)}*${methodTag}\n`;
         });

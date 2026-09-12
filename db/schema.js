@@ -90,7 +90,7 @@ async function initDB() {
         );
     `);
 
-    // Schema migrations — add premium & rate-limit columns (safe to run repeatedly)
+    // Schema migrations - add premium & rate-limit columns (safe to run repeatedly)
     const migrations = [
         'ALTER TABLE users ADD COLUMN is_premium INTEGER DEFAULT 0',
         'ALTER TABLE users ADD COLUMN premium_expires_at DATETIME',
@@ -619,7 +619,7 @@ async function checkAndIncrementUsage(userId) {
         return { allowed: true, isPremium: true, used: currentCount + 1, limit: Infinity };
     }
 
-    // Free tier — enforce limit
+    // Free tier - enforce limit
     if (currentCount >= FREE_DAILY_LIMIT) {
         return { allowed: false, isPremium: false, used: currentCount, limit: FREE_DAILY_LIMIT };
     }
@@ -636,7 +636,7 @@ async function checkAndIncrementUsage(userId) {
 /**
  * Activate premium for a user.
  * @param {string} telegramId
- * @param {number} months — number of months to grant
+ * @param {number} months - number of months to grant
  */
 async function setPremium(telegramId, months) {
     const client = getDB();

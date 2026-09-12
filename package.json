@@ -1,7 +1,7 @@
 {
   "name": "kobowise",
   "version": "1.0.0",
-  "description": "Kobowise — AI Business Doctor for Nigerian SMEs",
+  "description": "Kobowise - AI Business Doctor for Nigerian SMEs",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

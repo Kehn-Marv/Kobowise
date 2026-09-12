@@ -120,7 +120,7 @@ function stripSensitiveData(text) {
 
     // Remove "from" / "to" account holder names in narration if they look like full names
     // Pattern: "FROM SURNAME FIRSTNAME" or "TO SURNAME FIRSTNAME"
-    // We keep this light — the AI can still process without names
+    // We keep this light - the AI can still process without names
     cleaned = cleaned.replace(/(FROM|TO|FRM|SENDER|RECEIVER)[:\s]+([A-Z]{2,}\s+[A-Z]{2,}(?:\s+[A-Z]{2,})?)/gi, 
         (match, prefix) => `${prefix}: [NAME REDACTED]`);
 

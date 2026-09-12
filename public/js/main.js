@@ -1,5 +1,5 @@
 /* ============================================
-   KOBOWISE — Landing Page JavaScript
+   KOBOWISE - Landing Page JavaScript
    ============================================ */
 
 document.addEventListener('DOMContentLoaded', () => {

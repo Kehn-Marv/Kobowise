@@ -36,7 +36,7 @@ function startAdminBot(app, webhookUrl) {
     async function checkAuth(msg) {
         const authorized = await isAdmin(msg.from.id);
         if (!authorized) {
-            // Silent security — ignore unauthorized users completely
+            // Silent security - ignore unauthorized users completely
             console.log(`[Admin Bot] Unauthorized access attempt from ${msg.from.id} (@${msg.from.username})`);
             return false;
         }
@@ -53,30 +53,30 @@ function startAdminBot(app, webhookUrl) {
 
     adminBot.onText(/^\/help$/, async (msg) => {
         if (!(await checkAuth(msg))) return;
-        const helpText = `🛠️ *Kobowise Admin Bot — Help Menu*
+        const helpText = `🛠️ *Kobowise Admin Bot - Help Menu*
 
 *Analytics & Users:*
-• /stats — View your user growth, platform activity, regions, languages, and logging input methods.
-• /users — Generates a numbered list of all registered users on the bot along with their profile data.
+• /stats - View your user growth, platform activity, regions, languages, and logging input methods.
+• /users - Generates a numbered list of all registered users on the bot along with their profile data.
 
 *Broadcasting & Messaging:*
-• /broadcast — Starts a "Collection Session". You can send multiple photos, videos, voice notes, and texts to the bot. Click "Finish" and it clones them directly to every single user exactly as you sent them.
-• /broadcasts — Shows your 10 most recent broadcast sessions, their IDs, and whether they have been recalled.
-• /deletebroadcast — Triggers a conversational prompt to recall/undo a sent broadcast for everyone (or a specific user).
+• /broadcast - Starts a "Collection Session". You can send multiple photos, videos, voice notes, and texts to the bot. Click "Finish" and it clones them directly to every single user exactly as you sent them.
+• /broadcasts - Shows your 10 most recent broadcast sessions, their IDs, and whether they have been recalled.
+• /deletebroadcast - Triggers a conversational prompt to recall/undo a sent broadcast for everyone (or a specific user).
 
 *God-Mode Actions:*
-• /msg [Telegram ID] [message] — Send a direct DM to a user from the main bot.
-• /giftpremium [Telegram ID] — Instantly upgrade a user to Premium.
-• /revokepremium [Telegram ID] — Remove a user's Premium status.
-• /block [Telegram ID] — Ban a user from using the bot.
-• /unblock [Telegram ID] — Unban a user.
-• /backup — Download a complete JSON backup of the users & transactions database.
+• /msg [Telegram ID] [message] - Send a direct DM to a user from the main bot.
+• /giftpremium [Telegram ID] - Instantly upgrade a user to Premium.
+• /revokepremium [Telegram ID] - Remove a user's Premium status.
+• /block [Telegram ID] - Ban a user from using the bot.
+• /unblock [Telegram ID] - Unban a user.
+• /backup - Download a complete JSON backup of the users & transactions database.
 
 *Admin & Security Management:*
-• /admins — Shows all currently authorized admins. The Master Admin (you) is listed at the top.
-• /addadmin — Prompts you to paste a user's Telegram ID to instantly grant them full access to this bot.
-• /removeadmin — Prompts you to revoke a user's access.
-• /settings — Opens an interactive settings dashboard. Let's you configure if you want to be alerted when a new user registers, and how often.
+• /admins - Shows all currently authorized admins. The Master Admin (you) is listed at the top.
+• /addadmin - Prompts you to paste a user's Telegram ID to instantly grant them full access to this bot.
+• /removeadmin - Prompts you to revoke a user's access.
+• /settings - Opens an interactive settings dashboard. Let's you configure if you want to be alerted when a new user registers, and how often.
 
 _Tip: Unauthorized users will not see any replies from this bot (Silent Security)._`;
 
